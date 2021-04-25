@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
+  "proxy": "http://localhost:8050",
   "scripts": {
     "build": "webpack",
     "start": "node build/app.js",
@@ -12,7 +13,6 @@
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "phaser": "^3.54.0",
-    "socket.io": "^4.0.1",
     "socket.io-client": "^4.0.1"
   },
   "devDependencies": {

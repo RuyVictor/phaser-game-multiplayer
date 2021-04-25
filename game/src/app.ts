@@ -10,31 +10,33 @@ const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
 };
 
 let client_players:
-  {
-    playerId: string,
-    rotation: number,
-    x: number,
-    y: number,
-  }[] = [];
+{
+  playerId: string,
+  rotation: number,
+  x: number,
+  y: number,
+}[] = [];
 
 export class GameScene extends Phaser.Scene {
-  private square!: Phaser.GameObjects.Rectangle & { body: Phaser.Physics.Arcade.Body };
+  private player!: Phaser.GameObjects.Rectangle & { body: Phaser.Physics.Arcade.Body };
  
   constructor() {
     super(sceneConfig);
   }
 
-  addPlayer(playerInfo: any) {
-    this.square = this.add.rectangle(playerInfo.x, playerInfo.y, 100, 100, 0xFFFFFF) as any;
-    this.physics.add.existing(this.square);
+  addOtherPlayer(playerInfo: any) {
+    this.player = this.add.rectangle(playerInfo.x, playerInfo.y, 100, 100, 0xFFFFFF) as any;
+    this.player.name = playerInfo.playerId
+    this.physics.add.existing(this.player);
   }
 
-  addOtherPlayer(playerInfo: any) {
-    this.square = this.add.rectangle(playerInfo.x, playerInfo.y, 100, 100, 0x0000ff) as any;
-    this.physics.add.existing(this.square);
+  addPlayer(playerInfo: any) {
+    this.player = this.add.rectangle(playerInfo.x, playerInfo.y, 100, 100, 0x0000ff) as any;
+    this.physics.add.existing(this.player);
   }
 
   public create() {
+
     socket.emit("create", 'player created!')
 
     socket.on('currentPlayers', (players: any) => {
@@ -49,33 +51,38 @@ export class GameScene extends Phaser.Scene {
     });
 
     socket.on('playerMoved', (server_players: any) => {
-      client_players = server_players
+      //update all players
+      Object.keys(server_players).forEach( (id) => {
+          this.player.setPosition(server_players[id].x, server_players[id].y);
+      });
     });
   }
  
   public update() {
     const cursorKeys = this.input.keyboard.createCursorKeys();
- 
-    if (cursorKeys.up.isDown) {
-      this.square.body.setVelocityY(-500);
-    } else if (cursorKeys.down.isDown) {
-      this.square.body.setVelocityY(500);
-    } else {
-      this.square.body.setVelocityY(0);
-    }
     
-    if (cursorKeys.right.isDown) {
-      this.square.body.setVelocityX(500);
-    } else if (cursorKeys.left.isDown) {
-      this.square.body.setVelocityX(-500);
-    } else {
-      this.square.body.setVelocityX(0);
-    }
+    //wait load sprite
+    if (this.player) {
+      if (cursorKeys.up.isDown) {
+        this.player.body.setVelocityY(-500);
+      } else if (cursorKeys.down.isDown) {
+        this.player.body.setVelocityY(500);
+      } else {
+        this.player.body.setVelocityY(0);
+      }
+      
+      if (cursorKeys.right.isDown) {
+        this.player.body.setVelocityX(500);
+      } else if (cursorKeys.left.isDown) {
+        this.player.body.setVelocityX(-500);
+      } else {
+        this.player.body.setVelocityX(0);
+      }
 
-    var x = this.square.x;
-    var y = this.square.y;
-    var r = this.square.rotation;
-    socket.emit('playerMovement', { x: x, y: y, rotation: r });
+      let x = this.player.x;
+      let y = this.player.y;
+      socket.emit('playerMovement', { x: x, y: y});
+    }
   }
 }
 

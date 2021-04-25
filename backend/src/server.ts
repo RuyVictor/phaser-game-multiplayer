@@ -1,28 +1,28 @@
-import express from 'express';
+import express from 'express'
 import 'dotenv/config'
-const app = express();
-const http = require('http').Server(app);
-const io = require('socket.io')(http);
-
+import cors from 'cors'
 import { Player } from "./models/Player"
+const app = express()
+app.use(cors)
+
+const server = require('http').createServer(app)
+const io = require('socket.io')(server);
 
 const port = process.env.SERVER_PORT;
 
-app.use('/', express.static('game'));
-
 let players:
-  {
-    playerId: string,
-    rotation: number,
-    x: number,
-    y: number,
-  }[] = [];
+{
+  playerId: string,
+  rotation: number,
+  x: number,
+  y: number,
+}[] = [];
 
 io.on("connection", (socket: any) => {
 
   console.log(`Socket: Client ${socket.id} connected!`)
 
-  socket.on("create", (msg) => {
+  socket.on("create", (msg: string) => {
   	console.log(msg)
     //add player to list
     players.push({
@@ -32,6 +32,7 @@ io.on("connection", (socket: any) => {
       	playerId: socket.id
 	  })
     // on new player created, send updated players.
+    socket.emit('currentPlayers', players);
     socket.broadcast.emit('currentPlayers', players);
   })
 
@@ -39,13 +40,17 @@ io.on("connection", (socket: any) => {
   	console.log("player moved")
     
     Object.keys(players).forEach( (id: any) => {
+
       if (players[id].playerId === socket.id) {
         players[id].rotation = movementData.x;
         players[id].x = movementData.x;
         players[id].y = movementData.y;
 
+        console.log(players[id].x + "" + players[id].y)
+
         // emit a message to update players
-        socket.broadcast.emit('playerMoved', players);
+        socket.emit('playerMoved', players);
+        //socket.broadcast.emit('playerMoved', players);
       }
     });
 
@@ -66,6 +71,6 @@ io.on("connection", (socket: any) => {
   
 })
 
-http.listen(port, () => {
+server.listen(port, () => {
   console.log(`Server is listening on ${port}`);
 });
