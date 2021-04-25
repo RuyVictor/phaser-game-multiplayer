@@ -10,13 +10,7 @@ const io = require('socket.io')(server);
 
 const port = process.env.SERVER_PORT;
 
-let players:
-{
-  playerId: string,
-  rotation: number,
-  x: number,
-  y: number,
-}[] = [];
+let players: { [key: string]: {playerId: string, x: number, y: number} } = {};
 
 io.on("connection", (socket: any) => {
 
@@ -25,12 +19,11 @@ io.on("connection", (socket: any) => {
   socket.on("create", (msg: string) => {
   	console.log(msg)
     //add player to list
-    players.push({
-	    rotation: 0,
+    players[socket.id] = {
+      playerId: socket.id,
 	    x: 400,
-	    y: 400,
-      	playerId: socket.id
-	  })
+	    y: 400
+	  }
     // on new player created, send updated players.
     socket.emit('currentPlayers', players);
     socket.broadcast.emit('currentPlayers', players);
@@ -38,35 +31,22 @@ io.on("connection", (socket: any) => {
 
   socket.on('playerMovement', (movementData: any) => {
   	console.log("player moved")
-    
-    Object.keys(players).forEach( (id: any) => {
 
-      if (players[id].playerId === socket.id) {
-        players[id].rotation = movementData.x;
-        players[id].x = movementData.x;
-        players[id].y = movementData.y;
+      players[socket.id].x = movementData.x;
+      players[socket.id].y = movementData.y;
 
-        console.log(players[id].x + "" + players[id].y)
+      console.log(players[socket.id].x + " " + players[socket.id].y)
 
-        // emit a message to update players
-        socket.emit('playerMoved', players);
-        //socket.broadcast.emit('playerMoved', players);
-      }
-    });
-
+      // emit a message to update players
+      socket.emit('playerMoved', players);
   });
 
   socket.on('disconnect', () => {
     console.log(`Socket: Client ${socket.id} disconnected!`);
-    
-    Object.keys(players).forEach( (id: any) => {
-      if (players[id].playerId === socket.id) {
-        delete players[id];
-        //Send to all clients, the current player has been removed
-        io.emit('disconnected', socket.id);
-      }
-    });
-
+  
+    delete players[socket.id];
+    //Send to all clients, the current player has been removed
+    io.emit('removePlayer', socket.id);
   });
   
 })

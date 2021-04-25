@@ -9,30 +9,26 @@ const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   key: 'Game',
 };
 
-let client_players:
-{
-  playerId: string,
-  rotation: number,
-  x: number,
-  y: number,
-}[] = [];
+let allPlayers: { [key: string]: any } = {};
 
 export class GameScene extends Phaser.Scene {
-  private player!: Phaser.GameObjects.Rectangle & { body: Phaser.Physics.Arcade.Body };
- 
+  //private player!: Phaser.GameObjects.Rectangle & { body: Phaser.Physics.Arcade.Body };
+
   constructor() {
     super(sceneConfig);
   }
 
   addOtherPlayer(playerInfo: any) {
-    this.player = this.add.rectangle(playerInfo.x, playerInfo.y, 100, 100, 0xFFFFFF) as any;
-    this.player.name = playerInfo.playerId
-    this.physics.add.existing(this.player);
+    let otherPlayer = this.add.rectangle(playerInfo.x, playerInfo.y, 100, 100, 0x0000ff) as any;
+    this.physics.add.existing(otherPlayer);
+    allPlayers[playerInfo.playerId] = otherPlayer; //store a player with key & value
   }
 
+  //Same function, but change color for my actual player.
   addPlayer(playerInfo: any) {
-    this.player = this.add.rectangle(playerInfo.x, playerInfo.y, 100, 100, 0x0000ff) as any;
-    this.physics.add.existing(this.player);
+    let player = this.add.rectangle(playerInfo.x, playerInfo.y, 100, 100, 0xFFFFFF) as any;
+    this.physics.add.existing(player);
+    allPlayers[playerInfo.playerId] = player;
   }
 
   public create() {
@@ -41,6 +37,7 @@ export class GameScene extends Phaser.Scene {
 
     socket.on('currentPlayers', (players: any) => {
       console.log('Received players!')
+      console.log(allPlayers)
       Object.keys(players).forEach( (id) => {
         if (players[id].playerId === socket.id) {
           this.addPlayer(players[id]);
@@ -50,37 +47,46 @@ export class GameScene extends Phaser.Scene {
       });
     });
 
-    socket.on('playerMoved', (server_players: any) => {
-      //update all players
-      Object.keys(server_players).forEach( (id) => {
-          this.player.setPosition(server_players[id].x, server_players[id].y);
+    socket.on('playerMoved', (players: any) => {
+
+      Object.keys(players).forEach( (id) => {
+        //Disable update my player position
+        if (players[id].playerId !== socket.id) {
+          //updating myself, can cause lag in the controls
+          //So, update only other players
+          allPlayers[players[id].playerId].setPosition(players[id].x, players[id].y)
+        }
       });
+    });
+
+    socket.on('removePlayer', (player_id: any) => {
+      allPlayers[player_id].destroy();
     });
   }
  
   public update() {
     const cursorKeys = this.input.keyboard.createCursorKeys();
     
-    //wait load sprite
-    if (this.player) {
+    //wait load player
+    if (socket.id in allPlayers) {
       if (cursorKeys.up.isDown) {
-        this.player.body.setVelocityY(-500);
+        allPlayers[socket.id].body.setVelocityY(-500);
       } else if (cursorKeys.down.isDown) {
-        this.player.body.setVelocityY(500);
+        allPlayers[socket.id].body.setVelocityY(500);
       } else {
-        this.player.body.setVelocityY(0);
+        allPlayers[socket.id].body.setVelocityY(0);
       }
       
       if (cursorKeys.right.isDown) {
-        this.player.body.setVelocityX(500);
+        allPlayers[socket.id].body.setVelocityX(500);
       } else if (cursorKeys.left.isDown) {
-        this.player.body.setVelocityX(-500);
+        allPlayers[socket.id].body.setVelocityX(-500);
       } else {
-        this.player.body.setVelocityX(0);
+        allPlayers[socket.id].body.setVelocityX(0);
       }
 
-      let x = this.player.x;
-      let y = this.player.y;
+      let x = allPlayers[socket.id].x;
+      let y = allPlayers[socket.id].y;
       socket.emit('playerMovement', { x: x, y: y});
     }
   }
