@@ -11,11 +11,39 @@ const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
 
 let allPlayers: { [key: string]: any } = {};
 
+let allBullets: { [key: string]: any } = {};
+
+var bullet: any;
+
 export class GameScene extends Phaser.Scene {
-  //private player!: Phaser.GameObjects.Rectangle & { body: Phaser.Physics.Arcade.Body };
+  private bulletsGroup!: Phaser.GameObjects.Group;
 
   constructor() {
     super(sceneConfig);
+  }
+
+  public preload() {
+
+    this.load.image('bullet', 'assets/sprites/bullet.png');
+
+  }
+
+  shoot() {
+
+    bullet = this.bulletsGroup.get(allPlayers[socket.id].x, allPlayers[socket.id].y);
+
+    if (bullet) {
+      bullet.setActive(true);
+      bullet.setVisible(true);
+      let angle = Phaser.Math.Angle.Between(allPlayers[socket.id].x, allPlayers[socket.id].y, this.input.activePointer.x, this.input.activePointer.y);
+      bullet.rotation = angle
+
+      let angleVelocityX = 200 * Math.cos(angle)
+      let angleVelocityY = 200 * Math.sin(angle)
+      bullet.body.velocity.x = angleVelocityX;
+      bullet.body.velocity.y = angleVelocityY;
+                              //spawn bullet position
+    }
   }
 
   addOtherPlayer(playerInfo: any) {
@@ -32,7 +60,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   public create() {
-
+    //HANDLE PLAYERS
     socket.emit("create", 'player created!')
 
     socket.on('currentPlayers', (players: any) => {
@@ -62,6 +90,27 @@ export class GameScene extends Phaser.Scene {
     socket.on('removePlayer', (player_id: any) => {
       allPlayers[player_id].destroy();
     });
+    
+    //HANDLE BULLET
+    socket.on('playerShoted', (bullets: any) => {
+
+      Object.keys(bullets).forEach( (id) => {
+        //Disable update my bullet position
+        if (bullets[id].playerId !== socket.id) {
+          //updating myself, can cause lag in the controls
+          //So, update only other players
+          allBullets[bullets[id].playerId].setPosition(bullets[id].x, bullets[id].y)
+        }
+      });
+    });
+
+    this.bulletsGroup = this.physics.add.group({
+      defaultKey: 'bullet',
+      maxSize: 10,
+      setRotation: { value: 0, step: 0.06 }
+    });
+
+    this.input.on('pointerdown', this.shoot, this);
   }
  
   public update() {
@@ -85,9 +134,17 @@ export class GameScene extends Phaser.Scene {
         allPlayers[socket.id].body.setVelocityX(0);
       }
 
-      let x = allPlayers[socket.id].x;
-      let y = allPlayers[socket.id].y;
-      socket.emit('playerMovement', { x: x, y: y});
+      let playerX = allPlayers[socket.id].x;
+      let playery = allPlayers[socket.id].y;
+      socket.emit('playerMovement', { x: playerX, y: playery});
+
+      //HANDLE BULLET
+      if (bullet) {
+        let bulletX = allBullets[socket.id].body.position.x;
+        let bulletY = allBullets[socket.id].body.position.y;
+
+        socket.emit("playerShot", {x: bulletX, y: bulletY})
+      }
     }
   }
 }
@@ -112,7 +169,7 @@ const gameConfig: Phaser.Types.Core.GameConfig = {
   },
  
   parent: 'game',
-  backgroundColor: '#000000',
+  backgroundColor: '#5c5c5c',
 };
  
 export const game = new Phaser.Game(gameConfig);

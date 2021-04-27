@@ -12,6 +12,8 @@ const port = process.env.SERVER_PORT;
 
 let players: { [key: string]: {playerId: string, x: number, y: number} } = {};
 
+let bullets: { [key: string]: {playerId: string, x: number, y: number} } = {};
+
 io.on("connection", (socket: any) => {
 
   console.log(`Socket: Client ${socket.id} connected!`)
@@ -24,6 +26,12 @@ io.on("connection", (socket: any) => {
 	    x: 400,
 	    y: 400
 	  }
+
+    bullets[socket.id] = {
+      playerId: socket.id,
+      x: 400,
+      y: 400
+    }
     // on new player created, send updated players.
     socket.emit('currentPlayers', players);
     socket.broadcast.emit('currentPlayers', players);
@@ -39,6 +47,16 @@ io.on("connection", (socket: any) => {
 
       // emit a message to update players
       socket.emit('playerMoved', players);
+  });
+
+  socket.on('playerShot', (bulletData: any) => {
+    console.log("player shoted")
+
+      bullets[socket.id].x = bulletData.x;
+      bullets[socket.id].y = bulletData.y;
+
+      // emit a message to update players
+      socket.emit('playerShoted', bullets);
   });
 
   socket.on('disconnect', () => {
