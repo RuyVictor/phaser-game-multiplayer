@@ -127,14 +127,11 @@ export class GameScene extends Phaser.Scene {
 
     this.bulletsGroup = this.physics.add.group({
       defaultKey: 'bullet',
-      maxSize: 10,
-      setRotation: { value: 0, step: 0.06 }
+      maxSize: 10
     });
 
     this.otherPlayerBulletGroup = this.physics.add.group({
-      defaultKey: 'otherPlayerBullet',
-      maxSize: 10,
-      setRotation: { value: 0, step: 0.06 }
+      defaultKey: 'bullet',
     });
 
     this.input.on('pointerdown', this.shoot, this);
