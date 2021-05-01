@@ -28,7 +28,6 @@ io.on("connection", (socket: any) => {
 	  }
     // on new player created, send updated players.
     io.sockets.emit('currentPlayers', players);
-    //socket.broadcast.emit('currentPlayers', players);
   })
 
   socket.on('playerMovement', (movementData: any) => {
@@ -42,18 +41,12 @@ io.on("connection", (socket: any) => {
   });
 
   socket.on('playerShot', (bulletInfo: any) => {
+
+    //BULLET LAG COMPENSATION
+    let velocityToCompensateLag = 500 //150ms
+    bulletInfo.velocityX += velocityToCompensateLag * Math.cos(bulletInfo.rotation)
+    bulletInfo.velocityY += velocityToCompensateLag * Math.sin(bulletInfo.rotation)
     io.sockets.emit('receivedBulletInfo', bulletInfo);
-  });
-
-  socket.on('bulletMovement', (bulletData: any) => {
-
-    bullets[socket.id].x = bulletData.x;
-    bullets[socket.id].y = bulletData.y;
-
-    console.log(socket.id + bullets[socket.id].x + " " + bullets[socket.id].y)
-
-    // emit a message to update players
-    socket.emit('receivedBulletMovement', bullets);
   });
 
   socket.on('disconnect', () => {

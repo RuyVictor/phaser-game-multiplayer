@@ -11,14 +11,14 @@ const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
 
 let allPlayers: { [key: string]: any } = {};
 
-let playerHealth = 100;
-
 export class GameScene extends Phaser.Scene {
   private myBulletsGroup!: Phaser.GameObjects.Group;
   private myBullet!: Phaser.GameObjects.Sprite;
 
   private otherPlayerBulletGroup!: Phaser.GameObjects.Group;
   private otherPlayerBullet!: Phaser.GameObjects.Sprite;
+
+  private playerHealth = 100;
 
   constructor() {
     super(sceneConfig);
@@ -33,7 +33,6 @@ export class GameScene extends Phaser.Scene {
   onOtherPlayerHit(player: any, bullet: any) {
     bullet.destroy()
     player.setStrokeStyle(20, 0xefc53f);
-    socket.emit('playerHit', player)
   }
 
   //COLIDE FUNCTION CAN GET PARAMETERS FROM OVERLAP TEST CALLBACK
@@ -41,9 +40,9 @@ export class GameScene extends Phaser.Scene {
   onMyPlayerHit(Player: any, bullet: any) {
 
     bullet.destroy()
-    if (playerHealth > 0) {
+    if (this.playerHealth > 0) {
       //if (bulletType === 'pistol') {
-        playerHealth -= 40;
+        this.playerHealth -= 40;
         allPlayers[socket.id].setStrokeStyle(8, 0xefc53f);
       //}
     } else {
@@ -86,11 +85,7 @@ export class GameScene extends Phaser.Scene {
     this.otherPlayerBullet = this.otherPlayerBulletGroup.get(bulletInfo.initalPositionX, bulletInfo.initalPositionY, 'bullet');
 
     if (this.otherPlayerBullet) {
-      this.otherPlayerBullet.setActive(true);
-      this.otherPlayerBullet.setVisible(true);
       this.otherPlayerBullet.rotation = bulletInfo.rotation;
-
-
       this.otherPlayerBullet.body.velocity.x = bulletInfo.velocityX;
       this.otherPlayerBullet.body.velocity.y = bulletInfo.velocityY;
     }
