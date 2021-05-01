@@ -11,8 +11,12 @@ const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
 
 let allPlayers: { [key: string]: any } = {};
 
+let playerHealth = 100;
+
 export class GameScene extends Phaser.Scene {
-  private bulletsGroup!: Phaser.GameObjects.Group;
+  private myBulletsGroup!: Phaser.GameObjects.Group;
+  private myBullet!: Phaser.GameObjects.Sprite;
+
   private otherPlayerBulletGroup!: Phaser.GameObjects.Group;
   private otherPlayerBullet!: Phaser.GameObjects.Sprite;
 
@@ -26,20 +30,43 @@ export class GameScene extends Phaser.Scene {
 
   }
 
-  shoot() {
+  onOtherPlayerHit(player: any, bullet: any) {
+    bullet.destroy()
+    player.setStrokeStyle(20, 0xefc53f);
+    socket.emit('playerHit', player)
+  }
 
-    let bullet = this.bulletsGroup.get(allPlayers[socket.id].x, allPlayers[socket.id].y);
+  //COLIDE FUNCTION CAN GET PARAMETERS FROM OVERLAP TEST CALLBACK
+  //PASSING 2, WITH SECOND I CAN GET THE COLIDED OBJECT FROM THE BULLET GROUP TO MANIPULATE IT
+  onMyPlayerHit(Player: any, bullet: any) {
 
-    if (bullet) {
-      bullet.setActive(true);
-      bullet.setVisible(true);
+    bullet.destroy()
+    if (playerHealth > 0) {
+      //if (bulletType === 'pistol') {
+        playerHealth -= 40;
+        allPlayers[socket.id].setStrokeStyle(8, 0xefc53f);
+      //}
+    } else {
+      allPlayers[socket.id].setStrokeStyle(20, 0xefc53f);
+      allPlayers[socket.id].disableBody();
+    }
+  }
+
+  spawnPlayerBullet() {
+
+    this.myBullet = this.myBulletsGroup.get(allPlayers[socket.id].x, allPlayers[socket.id].y);
+
+    if (this.myBullet) {
+
+      let bulletVelocity = 1200;
+
       let angle = Phaser.Math.Angle.Between(allPlayers[socket.id].x, allPlayers[socket.id].y, this.input.activePointer.x, this.input.activePointer.y);
-      bullet.rotation = angle
+      let angleVelocityX = bulletVelocity * Math.cos(angle)
+      let angleVelocityY = bulletVelocity * Math.sin(angle)
 
-      let angleVelocityX = 200 * Math.cos(angle)
-      let angleVelocityY = 200 * Math.sin(angle)
-      bullet.body.velocity.x = angleVelocityX;
-      bullet.body.velocity.y = angleVelocityY;
+      this.myBullet.rotation = angle
+      this.myBullet.body.velocity.x = angleVelocityX;
+      this.myBullet.body.velocity.y = angleVelocityY;
 
       let bulletInfo = {
         playerId: socket.id,
@@ -63,7 +90,7 @@ export class GameScene extends Phaser.Scene {
       this.otherPlayerBullet.setVisible(true);
       this.otherPlayerBullet.rotation = bulletInfo.rotation;
 
-      //PHASER BUG, CANT HANDLE SPRITE MOVEMENT
+
       this.otherPlayerBullet.body.velocity.x = bulletInfo.velocityX;
       this.otherPlayerBullet.body.velocity.y = bulletInfo.velocityY;
     }
@@ -73,12 +100,18 @@ export class GameScene extends Phaser.Scene {
     let otherPlayer = this.add.rectangle(playerInfo.x, playerInfo.y, 100, 100, 0x0000ff) as any;
     this.physics.add.existing(otherPlayer);
     allPlayers[playerInfo.playerId] = otherPlayer; //store a player with key & value
+
+    this.physics.add.overlap(otherPlayer, this.myBulletsGroup, this.onOtherPlayerHit, undefined, this);
+    otherPlayer.body.setCollideWorldBounds(true);
   }
 
   //Same function, but change color for my actual player.
   addPlayer(playerInfo: any) {
     let player = this.add.rectangle(playerInfo.x, playerInfo.y, 100, 100, 0xFFFFFF) as any;
     this.physics.add.existing(player);
+    
+    this.physics.add.overlap(player, this.otherPlayerBulletGroup, this.onMyPlayerHit, undefined, this);
+    player.body.setCollideWorldBounds(true);
     allPlayers[playerInfo.playerId] = player;
   }
 
@@ -125,16 +158,16 @@ export class GameScene extends Phaser.Scene {
       }
     });
 
-    this.bulletsGroup = this.physics.add.group({
+    this.myBulletsGroup = this.physics.add.group({
       defaultKey: 'bullet',
-      maxSize: 10
+      maxSize: 10 //total bullets in weapon
     });
 
     this.otherPlayerBulletGroup = this.physics.add.group({
       defaultKey: 'bullet',
     });
 
-    this.input.on('pointerdown', this.shoot, this);
+    this.input.on('pointerdown', this.spawnPlayerBullet, this);
   }
  
   public update() {
