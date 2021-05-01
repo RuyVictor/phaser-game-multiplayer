@@ -26,37 +26,34 @@ io.on("connection", (socket: any) => {
 	    x: 400,
 	    y: 400
 	  }
-
-    bullets[socket.id] = {
-      playerId: socket.id,
-      x: 400,
-      y: 400
-    }
     // on new player created, send updated players.
-    socket.emit('currentPlayers', players);
-    socket.broadcast.emit('currentPlayers', players);
+    io.sockets.emit('currentPlayers', players);
+    //socket.broadcast.emit('currentPlayers', players);
   })
 
   socket.on('playerMovement', (movementData: any) => {
   	console.log("player moved")
 
-      players[socket.id].x = movementData.x;
-      players[socket.id].y = movementData.y;
+    players[socket.id].x = movementData.x;
+    players[socket.id].y = movementData.y;
 
-      console.log(players[socket.id].x + " " + players[socket.id].y)
-
-      // emit a message to update players
-      socket.emit('playerMoved', players);
+    // emit a message to update players
+    socket.emit('playerMoved', players);
   });
 
-  socket.on('playerShot', (bulletData: any) => {
-    console.log("player shoted")
+  socket.on('playerShot', (bulletInfo: any) => {
+    io.sockets.emit('receivedBulletInfo', bulletInfo);
+  });
 
-      bullets[socket.id].x = bulletData.x;
-      bullets[socket.id].y = bulletData.y;
+  socket.on('bulletMovement', (bulletData: any) => {
 
-      // emit a message to update players
-      socket.emit('playerShoted', bullets);
+    bullets[socket.id].x = bulletData.x;
+    bullets[socket.id].y = bulletData.y;
+
+    console.log(socket.id + bullets[socket.id].x + " " + bullets[socket.id].y)
+
+    // emit a message to update players
+    socket.emit('receivedBulletMovement', bullets);
   });
 
   socket.on('disconnect', () => {
