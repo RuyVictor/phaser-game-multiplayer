@@ -11,6 +11,8 @@ const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
 
 let allPlayers: { [key: string]: any } = {};
 
+let playerHealth = 100;
+
 export class GameScene extends Phaser.Scene {
   private myBulletsGroup!: Phaser.GameObjects.Group;
   private myBullet!: Phaser.GameObjects.Sprite;
@@ -18,7 +20,7 @@ export class GameScene extends Phaser.Scene {
   private otherPlayerBulletGroup!: Phaser.GameObjects.Group;
   private otherPlayerBullet!: Phaser.GameObjects.Sprite;
 
-  private playerHealth = 100;
+  private plataforms!: Phaser.GameObjects.Group;
 
   constructor() {
     super(sceneConfig);
@@ -26,28 +28,29 @@ export class GameScene extends Phaser.Scene {
 
   public preload() {
 
-    this.load.image('bullet', "./assets/sprites/bullet.png");
-
+    this.load.image('bullet', require('./assets/sprites/bullets/pistol_bullet.png').default);
+    this.load.spritesheet('player_idle', require('./assets/sprites/player/idle.png').default, { frameWidth: 48, frameHeight: 48 });
+    this.load.spritesheet('player_run', require('./assets/sprites/player/run.png').default, { frameWidth: 48, frameHeight: 48 });
+    this.load.spritesheet('player_death', require('./assets/sprites/player/death.png').default, { frameWidth: 48, frameHeight: 48 });
   }
 
   onOtherPlayerHit(player: any, bullet: any) {
     bullet.destroy()
-    player.setStrokeStyle(20, 0xefc53f);
   }
 
   //COLIDE FUNCTION CAN GET PARAMETERS FROM OVERLAP TEST CALLBACK
   //PASSING 2, WITH SECOND I CAN GET THE COLIDED OBJECT FROM THE BULLET GROUP TO MANIPULATE IT
-  onMyPlayerHit(Player: any, bullet: any) {
+  onMyPlayerHit(player: any, bullet: any) {
 
     bullet.destroy()
-    if (this.playerHealth > 0) {
+    if (playerHealth > 0) {
       //if (bulletType === 'pistol') {
-        this.playerHealth -= 40;
-        allPlayers[socket.id].setStrokeStyle(8, 0xefc53f);
+        playerHealth -= 50;
       //}
     } else {
-      allPlayers[socket.id].setStrokeStyle(20, 0xefc53f);
-      allPlayers[socket.id].disableBody();
+      allPlayers[socket.id].anims.play('death', true);
+      //allPlayers[socket.id].disableBody(false, true);
+      socket.emit('playerDeath')
     }
   }
 
@@ -57,12 +60,13 @@ export class GameScene extends Phaser.Scene {
 
     if (this.myBullet) {
 
-      let bulletVelocity = 1200;
+      let bulletVelocity = 1000;
 
       let angle = Phaser.Math.Angle.Between(allPlayers[socket.id].x, allPlayers[socket.id].y, this.input.activePointer.x, this.input.activePointer.y);
       let angleVelocityX = bulletVelocity * Math.cos(angle)
       let angleVelocityY = bulletVelocity * Math.sin(angle)
 
+      this.myBullet.setScale(8);
       this.myBullet.rotation = angle
       this.myBullet.body.velocity.x = angleVelocityX;
       this.myBullet.body.velocity.y = angleVelocityY;
@@ -92,8 +96,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   addOtherPlayer(playerInfo: any) {
-    let otherPlayer = this.add.rectangle(playerInfo.x, playerInfo.y, 100, 100, 0x0000ff) as any;
-    this.physics.add.existing(otherPlayer);
+    let otherPlayer = this.physics.add.sprite(playerInfo.x, playerInfo.y, 'player_idle');
+    otherPlayer.setScale(2.5);
+
     allPlayers[playerInfo.playerId] = otherPlayer; //store a player with key & value
 
     this.physics.add.overlap(otherPlayer, this.myBulletsGroup, this.onOtherPlayerHit, undefined, this);
@@ -102,11 +107,31 @@ export class GameScene extends Phaser.Scene {
 
   //Same function, but change color for my actual player.
   addPlayer(playerInfo: any) {
-    let player = this.add.rectangle(playerInfo.x, playerInfo.y, 100, 100, 0xFFFFFF) as any;
-    this.physics.add.existing(player);
-    
+    let player = this.physics.add.sprite(playerInfo.x, playerInfo.y, 'player_idle');
+    player.setCollideWorldBounds(true);
+    player.setScale(2.5);
+
+    this.anims.create({
+        key: 'idle',
+        frames: this.anims.generateFrameNumbers('player_idle', { start: 0, end: 4 }),
+        frameRate: 14,
+        repeat: -1 // -1 = infinte animation
+    });
+
+    this.anims.create({
+        key: 'run',
+        frames: this.anims.generateFrameNumbers('player_run', { start: 0, end: 5 }),
+        frameRate: 10,
+        repeat: -1 // -1 = infinte animation
+    });
+
+    this.anims.create({
+        key: 'death',
+        frames: this.anims.generateFrameNumbers('player_death', { start: 0, end: 7 }),
+        frameRate: 10,
+    });
+
     this.physics.add.overlap(player, this.otherPlayerBulletGroup, this.onMyPlayerHit, undefined, this);
-    player.body.setCollideWorldBounds(true);
     allPlayers[playerInfo.playerId] = player;
   }
 
@@ -136,8 +161,14 @@ export class GameScene extends Phaser.Scene {
           //updating myself, can cause lag in the controls
           //So, update only other players
           allPlayers[players[id].playerId].setPosition(players[id].x, players[id].y)
+          allPlayers[players[id].playerId].flipX = players[id].flipped
+          allPlayers[players[id].playerId].anims.play(players[id].animation, true);
         }
       });
+    });
+
+    socket.on('playerDied', (player_id: string) => {
+      allPlayers[player_id].anims.play('death');
     });
 
     socket.on('removePlayer', (player_id: any) => {
@@ -155,7 +186,7 @@ export class GameScene extends Phaser.Scene {
 
     this.myBulletsGroup = this.physics.add.group({
       defaultKey: 'bullet',
-      maxSize: 10 //total bullets in weapon
+      maxSize: 30 //total bullets in weapon
     });
 
     this.otherPlayerBulletGroup = this.physics.add.group({
@@ -163,32 +194,49 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.input.on('pointerdown', this.spawnPlayerBullet, this);
+
+    //HANDLE PLATAFORMS
+
+    this.plataforms = this.physics.add.staticGroup();
   }
  
   public update() {
     const cursorKeys = this.input.keyboard.createCursorKeys();
-    
     //wait load player
+
     if (socket.id in allPlayers) {
-      if (cursorKeys.up.isDown) {
-        allPlayers[socket.id].body.setVelocityY(-500);
-      } else if (cursorKeys.down.isDown) {
-        allPlayers[socket.id].body.setVelocityY(500);
-      } else {
-        allPlayers[socket.id].body.setVelocityY(0);
-      }
-      
-      if (cursorKeys.right.isDown) {
-        allPlayers[socket.id].body.setVelocityX(500);
-      } else if (cursorKeys.left.isDown) {
-        allPlayers[socket.id].body.setVelocityX(-500);
-      } else {
-        allPlayers[socket.id].body.setVelocityX(0);
+
+      if (playerHealth > 0) {
+        if (cursorKeys.up.isDown) {
+          allPlayers[socket.id].setVelocityY(-500);
+        } else if (cursorKeys.down.isDown) {
+          allPlayers[socket.id].setVelocityY(500);
+        } else {
+          allPlayers[socket.id].setVelocityY(0);
+        }
+        
+        if (cursorKeys.right.isDown) {
+          allPlayers[socket.id].setVelocityX(500);
+          allPlayers[socket.id].anims.play('run', true);
+          allPlayers[socket.id].flipX = false;
+        } else if (cursorKeys.left.isDown) {
+          allPlayers[socket.id].setVelocityX(-500);
+          allPlayers[socket.id].anims.play('run', true);
+          allPlayers[socket.id].flipX = true;
+        } else {
+          allPlayers[socket.id].setVelocityX(0);
+          allPlayers[socket.id].anims.play('idle', true);
+        }
       }
 
       let playerX = allPlayers[socket.id].x;
-      let playery = allPlayers[socket.id].y;
-      socket.emit('playerMovement', { x: playerX, y: playery});
+      let playerY = allPlayers[socket.id].y;
+      let playerFlipped = allPlayers[socket.id].flipX;
+      let playerAnimation = allPlayers[socket.id].anims.getName()
+
+      socket.emit('playerMovement', {
+        x: playerX, y: playerY, flipped: playerFlipped, animation: playerAnimation
+      });
     }
   }
 }
@@ -208,7 +256,7 @@ const gameConfig: Phaser.Types.Core.GameConfig = {
   physics: {
     default: 'arcade',
     arcade: {
-      debug: true,
+      debug: true
     },
   },
  
