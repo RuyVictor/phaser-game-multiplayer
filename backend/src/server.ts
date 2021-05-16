@@ -1,7 +1,9 @@
 import express from 'express'
 import 'dotenv/config'
 import cors from 'cors'
+
 import { Player } from "./models/Player"
+
 const app = express()
 app.use(cors)
 
@@ -17,6 +19,8 @@ let players: { [key: string]: {
   flipped: boolean,
   animation: string
 } } = {};
+
+let chat: {playerId: string, playerName: string, message: string}[] = [];
 
 io.on("connection", (socket: any) => {
 
@@ -52,13 +56,23 @@ io.on("connection", (socket: any) => {
 
     //BULLET LAG COMPENSATION
     let velocityToCompensateLag = 300 //150ms
-    bulletInfo.velocityX += velocityToCompensateLag * Math.cos(bulletInfo.rotation)
-    bulletInfo.velocityY += velocityToCompensateLag * Math.sin(bulletInfo.rotation)
+    //bulletInfo.velocityX += velocityToCompensateLag * Math.cos(bulletInfo.rotation)
+    //bulletInfo.velocityY += velocityToCompensateLag * Math.sin(bulletInfo.rotation)
     io.sockets.emit('receivedBulletInfo', bulletInfo);
   });
 
   socket.on('playerDeath', () => {
     socket.emit('playerDied', socket.id);
+  });
+
+  socket.on('playerMessage', (messageInfo: any) => {
+    chat.push({
+      playerId: socket.id,
+      playerName: messageInfo.playerName, // CONSTRUCTION...
+      message: messageInfo.message
+    })
+    //SENDING ALL CHAT, BECAUSE NEW PLAYERS CAN READ THE LAST MENSAGES
+    io.sockets.emit('receivedPlayerMessage', chat);
   });
 
   socket.on('disconnect', () => {
