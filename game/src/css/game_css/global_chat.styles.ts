@@ -6,7 +6,6 @@ export default `
     width: 20rem;
     height: 8rem;
     color: #4a4a4a;
-    font: 16px Roboto, 'sans-serif';
     border-radius: 4px';
     text-align: justify;
 `

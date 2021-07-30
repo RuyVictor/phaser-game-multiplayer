@@ -1,3 +1,9 @@
+import { io } from "socket.io-client";
+const socket = io("http://localhost:8050")
+
+import Menu from "./scenes/menu";
+import ListRooms from "./scenes/list_rooms";
+import CreateRoom from "./scenes/create_room";
 import Gravel from "./scenes/gravel";
 
 const gameConfig: Phaser.Types.Core.GameConfig = {
@@ -5,14 +11,20 @@ const gameConfig: Phaser.Types.Core.GameConfig = {
  
   type: Phaser.AUTO,
   
-  scene:  [Gravel],
+  scene: [
+    new Menu(socket),
+    new ListRooms(socket),
+    new CreateRoom(socket),
+    new Gravel(socket)
+  ],
   
   scale: {
-    width: window.innerWidth,
-    height: window.innerHeight,
+    width: 1280,
+    height: 720,
   },
   
   pixelArt: true,
+
   dom: {
     createContainer: true
   },
@@ -20,7 +32,7 @@ const gameConfig: Phaser.Types.Core.GameConfig = {
   physics: {
     default: 'arcade',
     arcade: {
-      debug: true
+      debug: false
     },
   },
  

@@ -1,4 +1,6 @@
 const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+
 module.exports = {
   entry: './src/app.ts',
   module: {
@@ -14,7 +16,7 @@ module.exports = {
           {
             loader: 'file-loader',
           }
-        ]
+        ],
       }
     ]
   },
@@ -25,5 +27,11 @@ module.exports = {
     filename: 'app.js',
     path: path.resolve(__dirname, 'build')
   },
-  mode: 'development'
+  plugins: [
+    new HtmlWebpackPlugin()
+  ],
+  devServer: {
+    contentBase: './build',
+  },
+  mode: 'development',
 };
