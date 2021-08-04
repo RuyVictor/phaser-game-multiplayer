@@ -2,7 +2,8 @@ export interface Player {
     x: number, 
     y: number, 
     flipped: boolean,
-    animation: string
+    animation: string,
+    health: number
 }
 
 export interface Chat {

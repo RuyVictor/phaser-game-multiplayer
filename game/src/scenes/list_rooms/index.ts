@@ -2,10 +2,10 @@ import * as Phaser from 'phaser';
 import { Socket } from "socket.io-client";
 
 //Components
-import { roomsContainerHTML, singleRoomContainer, span } from '../html/list_rooms.html';
+import { roomsContainerHTML, singleRoomContainer, span } from './html';
 
 //Custom Interfaces
-import { RoomInfo } from '../interfaces/interfaces'
+import { RoomInfo } from '../../interfaces/interfaces'
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   active: false,
@@ -25,7 +25,6 @@ export default class ListRooms extends Phaser.Scene {
 
   loadUI() {
     this.HTML = this.add.dom(window.innerWidth / 2, window.innerHeight / 2).createFromHTML(roomsContainerHTML)
-    //this.roomsButton = this.add.dom(window.innerWidth - 240, window.innerHeight - 10, 'button', selectionButtonStyle, 'SALAS').setOrigin(0);
     const container = this.HTML.getChildByID('container');
     container.querySelectorAll('button').forEach((object: any) => {
       object.addEventListener('pointerover', () => {

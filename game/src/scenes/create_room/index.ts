@@ -2,10 +2,10 @@ import * as Phaser from 'phaser';
 import { Socket } from "socket.io-client";
 
 //Components
-import { createRoomContainerHTML } from '../html/create_room.html';
+import { createRoomContainerHTML } from './html';
 
 //Custom Interfaces
-import { RoomInfo } from '../interfaces/interfaces'
+import { RoomInfo } from '../../interfaces/interfaces'
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   active: false,
@@ -40,7 +40,7 @@ export default class CreateRoom extends Phaser.Scene {
     })
 
     const slider: any = this.HTML.getChildByID('slider');
-
+    slider.value = 2; // default players in room value
     const playersRange = this.HTML.getChildByID('playersRange');
     playersRange.innerHTML = slider.value;
     slider.oninput = function() {

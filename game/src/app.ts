@@ -15,7 +15,7 @@ const gameConfig: Phaser.Types.Core.GameConfig = {
     new Menu(socket),
     new ListRooms(socket),
     new CreateRoom(socket),
-    new Gravel(socket)
+    new Gravel(socket),
   ],
   
   scale: {

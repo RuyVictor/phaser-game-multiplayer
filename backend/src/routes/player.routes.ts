@@ -16,7 +16,8 @@ export default function PlayerRoutes (io: Server, socket: Socket) {
                 x: getRandomSpawnPoint(400, 500),
                 y: getRandomSpawnPoint(400, 500),
                 flipped: randomFlip,
-                animation: 'player_idle'
+                animation: 'player_idle',
+                health: 100
             }
         }
         const initialInformations = {
@@ -32,7 +33,8 @@ export default function PlayerRoutes (io: Server, socket: Socket) {
             x: data.playerInfo.x,
             y: data.playerInfo.y,
             flipped: data.playerInfo.flipped,
-            animation: data.playerInfo.animation
+            animation: data.playerInfo.animation,
+            health: data.playerInfo.health
         };
     
         // emit a message to update players

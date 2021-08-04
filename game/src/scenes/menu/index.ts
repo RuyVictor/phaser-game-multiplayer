@@ -2,7 +2,7 @@ import * as Phaser from 'phaser';
 import { Socket } from "socket.io-client";
 
 //Components
-import selectionButtonStyle from '../css/menu_css/selection_button.styles';
+import { selectionButtonStyle } from './html';
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   active: false,
