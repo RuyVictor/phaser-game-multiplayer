@@ -7,13 +7,14 @@ import addOtherPlayer from '../../components/add_other_player'
 import roomChat from '../../components/room_chat'
 import playerBalloonChat from '../../components/player_balloon_chat'
 import healthBar from '../../components/health_bar'
+import roomActionsLog from '../../components/room_actions_log'
 
 //Triggers
 import onMyPlayerHit from '../../triggers/onMyPlayerHit'
 import onOtherPlayerHit from '../../triggers/onOtherPlayerHit'
 
 //Custom Interfaces
-import { InitialPlayerInformations, RoomInfoGame, IPlayer } from '../../interfaces/interfaces'
+import { InitialPlayerInformations, RoomInfoGame, IPlayer, IWhoKilledWho } from '../../interfaces/interfaces'
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   active: true,
@@ -39,11 +40,11 @@ export default class Gravel extends Phaser.Scene {
   private roomInfo!: RoomInfoGame;
 
   //Bullets
-  private myBulletsGroup!: Phaser.GameObjects.Group;
-  private myBullet!: Phaser.GameObjects.Sprite | any;
+  private myBulletsGroup!: Phaser.Physics.Arcade.Group;
+  private myBullet!: Phaser.Physics.Arcade.Sprite;
 
-  private otherPlayerBulletGroup!: Phaser.GameObjects.Group;
-  private otherPlayerBullet!: Phaser.GameObjects.Sprite;
+  private otherPlayerBulletGroup!: Phaser.Physics.Arcade.Group;
+  private otherPlayerBullet!: Phaser.Physics.Arcade.Sprite;
   
   init (roomInfo: RoomInfoGame) {
     this.roomInfo = roomInfo;
@@ -69,11 +70,15 @@ export default class Gravel extends Phaser.Scene {
       let angle = Phaser.Math.Angle.Between(this.myBullet.x, this.myBullet.y, crosshairX, crosshairY);
       let angleVelocityX = bulletVelocity * Math.cos(angle)
       let angleVelocityY = bulletVelocity * Math.sin(angle)
-
-      this.myBullet.setScale(6);
       this.myBullet.rotation = angle
-      
+      this.myBullet.setScale(6);
       this.physics.moveTo(this.myBullet,crosshairX,crosshairY, bulletVelocity);
+
+      setInterval((bullet: Phaser.Physics.Arcade.Sprite) => {
+        if(!this.physics.world.bounds.contains(bullet.x, bullet.y)) {
+          bullet.destroy()
+        }
+      }, 0, this.myBullet)
 
       let bulletInfo = {
         playerId: this.socket.id,
@@ -96,11 +101,18 @@ export default class Gravel extends Phaser.Scene {
       this.otherPlayerBullet.rotation = bulletInfo.angle;
       this.otherPlayerBullet.body.velocity.x = bulletInfo.velocityX;
       this.otherPlayerBullet.body.velocity.y = bulletInfo.velocityY;
+
+      setInterval((bullet: Phaser.Physics.Arcade.Sprite) => {
+        if(!this.physics.world.bounds.contains(bullet.x, bullet.y)) {
+          bullet.destroy()
+        }
+      }, 0, this.otherPlayerBullet)
+
+      this.otherPlayerBullet.setData({playerId: bulletInfo.playerId})
     }
   }
 
   create() {
-    //When i enter in game, call to all players to receive my information
     this.socket.emit("playerEntered", this.roomInfo.roomId)
     //Return of all informations of this current game
     this.socket.on('currentPlayers', ({players, chat}: InitialPlayerInformations) => {
@@ -124,6 +136,7 @@ export default class Gravel extends Phaser.Scene {
           roomChat(this, this.socket, this.roomInfo.roomId, chat)
           playerBalloonChat(this, allPlayers, this.socket)
           healthBar(this, allPlayers, this.socket)
+          roomActionsLog(this, allPlayers,this.socket)
         } else {
           if (!(id in allPlayers)) {
             allPlayers[id] = addOtherPlayer(this, players[id]);
@@ -154,13 +167,15 @@ export default class Gravel extends Phaser.Scene {
 
     //HANDLE PLAYER DIED
 
-    this.socket.on('playerDied', (playerId: string) => {
-      allPlayers[playerId].anims.play('death', true);
+    this.socket.on('playerDied', (data: IWhoKilledWho) => {
+      allPlayers[data.playerId].anims.play('death', true);
     });
 
     this.socket.on('removePlayer', (playerId: string) => {
-      allPlayers[playerId].destroy();
-      delete allPlayers[playerId];
+      if (playerId in allPlayers) {
+        allPlayers[playerId].destroy();
+        delete allPlayers[playerId];
+      }
     });
     
     //HANDLE BULLET
@@ -173,7 +188,7 @@ export default class Gravel extends Phaser.Scene {
 
     this.myBulletsGroup = this.physics.add.group({
       defaultKey: 'bullet',
-      maxSize: 600, //total bullets in weapon
+      maxSize: 600 //total bullets in weapon
     });
 
     this.otherPlayerBulletGroup = this.physics.add.group({

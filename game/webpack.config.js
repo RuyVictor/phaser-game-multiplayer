@@ -31,6 +31,7 @@ module.exports = {
     new HtmlWebpackPlugin()
   ],
   devServer: {
+    port: 8080,
     contentBase: './build',
   },
   mode: 'development',

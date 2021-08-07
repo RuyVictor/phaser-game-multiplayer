@@ -1,5 +1,5 @@
 import { Server, Socket } from 'socket.io'
-import { Player, Chat } from '../interfaces/interfaces'
+import { Player, Chat, IWhoKilledWho } from '../interfaces/interfaces'
 import getRandomSpawnPoint from '../helpers/getRandomSpawnPoint';
 
 let playersInRoom: { [roomId: string]: { [socketId: string]: Player } } = {};
@@ -45,8 +45,8 @@ export default function PlayerRoutes (io: Server, socket: Socket) {
         io.to(data.roomId).emit('receivedBulletInfo', data.bulletInfo);
     });
     
-    socket.on('playerDeath', (roomId: string) => {
-        io.to(roomId).emit('playerDied', socket.id);
+    socket.on('playerDeath', (data: IWhoKilledWho) => {
+        io.to(data.roomId).emit('playerDied', data);
     });
     
     socket.on('playerMessage', (data: any) => {

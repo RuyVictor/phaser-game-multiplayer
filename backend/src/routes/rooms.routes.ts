@@ -17,7 +17,11 @@ export default function RoomsRoutes (io: Server, socket: Socket) {
                 delete activeRooms[roomId]
             }
         })
-        socket.emit('receivedAllRooms', activeRooms);
+
+        const filteredRooms = Object.fromEntries(Object.entries(activeRooms).
+        filter(([key, val]) => val.isPrivate === false ));
+
+        socket.emit('receivedAllRooms', filteredRooms);
     })
 
     socket.on("createRoom", (createInfo: RoomInfo) => {
@@ -26,8 +30,10 @@ export default function RoomsRoutes (io: Server, socket: Socket) {
             capacity: createInfo.capacity,
             map: createInfo.map,
             owner: createInfo.owner,
+            isPrivate: createInfo.isPrivate,
             playersCount: createInfo.playersCount
         }
+        console.log('Created room:', roomId)
         socket.join(roomId)
         socket.emit('roomCreated', { roomInfo: activeRooms[roomId], roomId })
     })

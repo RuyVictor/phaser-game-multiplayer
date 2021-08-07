@@ -38,6 +38,23 @@ export default class ListRooms extends Phaser.Scene {
       })
     })
 
+    const codeInput = this.HTML.getChildByID('code_input') as HTMLInputElement;
+
+    codeInput.addEventListener('keydown', (event: { code: string; }) => {
+      if (event.code === 'Space') {
+        codeInput.value += " "
+      }
+    })
+
+    let choosedRoom = {}
+
+    const joinWithCodeButton = this.HTML.getChildByID('join_with_code_button') as HTMLButtonElement;
+
+    joinWithCodeButton.addEventListener('click', () => {
+      choosedRoom = { roomId: codeInput.value }
+      this.socket.emit('joinRoom', codeInput.value)
+    })
+
     const generateRoomContainerElement = (roomId: string, value: RoomInfo) =>
     `
     <a roomId="${roomId}">
@@ -50,7 +67,6 @@ export default class ListRooms extends Phaser.Scene {
     `
     const roomsContainer = this.HTML.getChildByID('rooms_container');
   
-    let choosedRoom = {}
     this.socket.emit('getAllRooms')
     this.socket.on('receivedAllRooms', (activeRooms: { [key: string]: RoomInfo }) => {
 

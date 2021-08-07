@@ -58,10 +58,7 @@ export const createRoomContainerHTML = `
             <input id="slider" style=${slider} type="range" min="1" max="20" value="1">
             <div style="display: flex; align-items: center;">
                 <span>Manter sala privada</span>
-                <label class="switch">
-                    <input type="checkbox">
-                    <span class="slider"></span>
-                </label>
+                <input type="checkbox" id="private_checkbox">
             </div>
             <span>Selecione o mapa</span>
             <div id="maps_container" style="${mapsContainer}">

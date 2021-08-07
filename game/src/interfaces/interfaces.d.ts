@@ -31,11 +31,18 @@ export interface IHeathBar {
     tween: Phaser.Tweens.Tween
 }
 
+export interface IWhoKilledWho {
+    roomId: string,
+    killerId: string,
+    playerId: string
+}
+
 export interface RoomInfo {
     owner: string,
     playersCount: number,
     capacity: number,
-    map: string
+    map: string,
+    isPrivate: boolean
 }
 
 export interface RoomInfoGame {

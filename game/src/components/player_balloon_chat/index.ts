@@ -2,7 +2,7 @@
 import { balloonPlayerChatHTML, messageStyle } from './html'
 
 // Interfaces
-import { IPlayerObject, Chat, IBalloonChat } from '../../interfaces/interfaces'
+import { IPlayerObject, Chat, IBalloonChat, IWhoKilledWho } from '../../interfaces/interfaces'
 
 // Utils
 import { Socket } from 'socket.io-client'
@@ -47,14 +47,6 @@ export default function playerBalloonChat(scene: Phaser.Scene, allPlayers: IPlay
         setInterval(() => {
             allBallonChat[value.playerId].object.setPosition(allPlayers[value.playerId].x, allPlayers[value.playerId].y - heightAbovePlayer)
         }, 0)
-    
-        socket.on('removePlayer', (playerId: string) => {
-            delete allBallonChat[playerId];
-        });
-
-        socket.on('playerDied', (playerId: string) => {
-            allBallonChat[playerId].object.setAlpha(0)
-        });
 
         } else {
         const container = allBallonChat[value.playerId].object.getChildByID('container') as HTMLDivElement;
@@ -64,5 +56,17 @@ export default function playerBalloonChat(scene: Phaser.Scene, allPlayers: IPlay
         allBallonChat[value.playerId].object.setScale(1)
         allBallonChat[value.playerId].tween.restart()
         }
+    });
+
+    socket.on('removePlayer', (playerId: string) => {
+        if (playerId in allBallonChat) {
+            allBallonChat[playerId].object.destroy()
+            delete allBallonChat[playerId];
+        }
+    });
+
+    socket.on('playerDied', (data: IWhoKilledWho) => {
+        if (data.playerId in allBallonChat)
+        allBallonChat[data.playerId].object.setAlpha(0)
     });
 }

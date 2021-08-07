@@ -58,7 +58,7 @@ export const roomsContainerHTML = `
         <div id="actions_container" style="${actionsContainer}">
             <button id="create_room_button" style="${actionButton}">CRIAR SALA</button>
             <input id="code_input" style="${codeInput}" placeholder="Código da sala">
-            <button id="join_room_button" style="${actionButton}">ENTRAR COM CÓDIGO</button>
+            <button id="join_with_code_button" style="${actionButton}">ENTRAR COM CÓDIGO</button>
         </div>
         <span>Salas</span>
         <hr>

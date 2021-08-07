@@ -17,18 +17,23 @@ export default function onMyPlayerHit(
     roomId: string) {
 
     scene.add.existing(new SparkEffect(scene, 10, bullet.body.position.x, bullet.body.position.y));
-
+    const killerId = bullet.getData('playerId')
     bullet.destroy()
 
     if (playerHealth.heath > 0) {
       //if (bulletType === 'pistol') {
-        playerHealth.heath -= 20;
+        playerHealth.heath -= 10;
       //}
     } else {
         //Animation, show one time
         if (player.anims.getName() !== 'death') {
             player.anims.play('death', true);
-            socket.emit('playerDeath', roomId)
+            const deathInfo = {
+              roomId: roomId,
+              killerId: killerId,
+              playerId: socket.id
+            }
+            socket.emit('playerDeath', deathInfo)
         }
     }
 }

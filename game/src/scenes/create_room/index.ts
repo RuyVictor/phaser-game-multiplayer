@@ -52,6 +52,16 @@ export default class CreateRoom extends Phaser.Scene {
       this.scene.start('ListRooms');
     })
 
+    let isPrivate = false;
+    const checkboxButton: any = this.HTML.getChildByID('private_checkbox');
+    checkboxButton.addEventListener('click', () => {
+      if (checkboxButton.checked == true){
+        isPrivate = true
+      } else {
+        isPrivate = false
+      }
+    })
+
     const mapsContainer = this.HTML.getChildByID('maps_container');
     let choosedMap = 'Gravel';
     mapsContainer.querySelectorAll('a').forEach(object => {
@@ -75,6 +85,7 @@ export default class CreateRoom extends Phaser.Scene {
         capacity: slider.value,
         map: choosedMap,
         owner: this.socket.id,
+        isPrivate: isPrivate,
         playersCount: 0
       }
       this.socket.emit('createRoom', info)

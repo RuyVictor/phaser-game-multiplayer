@@ -12,9 +12,16 @@ export interface Chat {
     message: string
 }
 
+export interface IWhoKilledWho {
+    roomId: string,
+    killerId: string,
+    playerId: string
+}
+
 export interface RoomInfo {
     owner: string,
     playersCount: number,
     capacity: number,
+    isPrivate: boolean,
     map: string
 }

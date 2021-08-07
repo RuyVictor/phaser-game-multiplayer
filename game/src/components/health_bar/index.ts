@@ -2,7 +2,7 @@
 import { healthBarHTML } from './html'
 
 // Interfaces
-import { IPlayerObject, IHeathBar, IPlayer } from '../../interfaces/interfaces'
+import { IPlayerObject, IHeathBar, IPlayer, IWhoKilledWho } from '../../interfaces/interfaces'
 
 // Utils
 import { Socket } from 'socket.io-client'
@@ -41,24 +41,28 @@ export default function healthBar(scene: Phaser.Scene, allPlayers: IPlayerObject
                 container.style.width = players[id].health + '%';
 
                 setInterval(() => {
+                    if (id in allHealthBar)
                     allHealthBar[id].object.setPosition(allPlayers[id].x, allPlayers[id].y - heightAbovePlayer)
                 }, 0)
-            
-                socket.on('removePlayer', (playerId: string) => {
-                    delete allHealthBar[playerId];
-                });
-
-                socket.on('playerDied', (playerId: string) => {
-                    allHealthBar[playerId].object.setAlpha(0)
-                });
             } else {
                 const container = allHealthBar[id].object.getChildByID('health-bar') as HTMLDivElement;
                 container.style.width = players[id].health + '%';
 
                 allHealthBar[id].object.setAlpha(1)
-                //allHealthBar[id].object.setScale(1)
                 //allHealthBar[id].tween.restart()
             }
         });
+    });
+
+    socket.on('removePlayer', (playerId: string) => {
+        if (playerId in allHealthBar) {
+            allHealthBar[playerId].object.destroy()
+            delete allHealthBar[playerId];
+        }
+    });
+
+    socket.on('playerDied', (data: IWhoKilledWho) => {
+        if (data.playerId in allHealthBar)
+        allHealthBar[data.playerId].object.setAlpha(0)
     });
 }

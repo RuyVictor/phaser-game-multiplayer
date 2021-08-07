@@ -4,7 +4,7 @@ export const containerStyle = `
 `
 
 export const barStyle = `
-	background-color: red;
+	background-color: #d90429;
     width: 0%;
     height: 10px;
 `

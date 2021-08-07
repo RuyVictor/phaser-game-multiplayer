@@ -15,6 +15,7 @@ export default function roomChat(
 
     const html = scene.add.dom(10, 10).createFromHTML(chatContainerHTML).setOrigin(0);
     html.setScrollFactor(0)
+
     const roomChat = html.getChildByID('room_chat') as HTMLDivElement;
     const inputText = html.getChildByID('field_chat') as HTMLInputElement;
     const sendMessageButton = html.getChildByID('send_message_button') as HTMLButtonElement;
