@@ -40,10 +40,10 @@ export default function healthBar(scene: Phaser.Scene, allPlayers: IPlayerObject
                 const container = allHealthBar[id].object.getChildByID('health-bar') as HTMLDivElement;
                 container.style.width = players[id].health + '%';
 
-                setInterval(() => {
+                scene.events.on('update', () => {
                     if (id in allHealthBar)
                     allHealthBar[id].object.setPosition(allPlayers[id].x, allPlayers[id].y - heightAbovePlayer)
-                }, 0)
+                })
             } else {
                 const container = allHealthBar[id].object.getChildByID('health-bar') as HTMLDivElement;
                 container.style.width = players[id].health + '%';

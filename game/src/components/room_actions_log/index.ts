@@ -52,69 +52,50 @@ export default function roomActionsLog(
       </p>
     `
 
-
     const htmlTween = scene.add.tween({
       targets: html,
       ease: 'Sine.easeInOut',
-      duration: 1000,
-      delay: 3000,
+      duration: 2000,
       yoyo: false,
       alpha: {from: 1, to: 0},
-      paused: true
     })
-
-    const maxChildElements = 4
 
     socket.on('currentPlayers', ({players}: InitialPlayerInformations) => {
       Object.keys(players).forEach(id => {
         if (!(ids.includes(id))) {
+          container.innerHTML += generatePlayerEnteredElement(id)
           ids.push(id)
-          if (container.childElementCount < maxChildElements) {
-            container.innerHTML += generatePlayerEnteredElement(id)
-          } else {
-            container.removeChild(container.childNodes[0])
-            container.innerHTML += generatePlayerEnteredElement(id)
-          }
-          container.scrollTo({
-            top: container.scrollHeight, //work only on focusing currently page
-            behavior: 'smooth',
-          })
-          html.setAlpha(1)
-          htmlTween.play()
-          htmlTween.restart()
         }
+        setTimeout(() =>
+        container.scrollTo({
+          top: container.scrollHeight, //work only on focusing currently page
+          behavior: 'smooth',
+        }), 1000)
+        html.setAlpha(1)
+        htmlTween.restart()
       })
     })
 
     socket.on('playerDied', (data: IWhoKilledWho) => {
-      if (container.childElementCount < maxChildElements) {
-        container.innerHTML += generateWhoKilledWhoElement(data)
-      } else {
-        container.removeChild(container.childNodes[0])
-        container.innerHTML += generateWhoKilledWhoElement(data)
-      }
+      container.innerHTML += generateWhoKilledWhoElement(data)
+      setTimeout(() =>
       container.scrollTo({
-        top: container.scrollHeight, //work only on focusing currently page
+        top: container.scrollHeight,
         behavior: 'smooth',
-      })
+      }), 1000)
       html.setAlpha(1)
-      htmlTween.play()
       htmlTween.restart()
     });
 
     socket.on('removePlayer', (playerId: string) => {
-      if (container.childElementCount < maxChildElements) {
-        container.innerHTML += generatePlayerRemovedElement(playerId)
-      } else {
-        container.removeChild(container.childNodes[0])
-        container.innerHTML += generatePlayerRemovedElement(playerId)
-      }
+      container.innerHTML += generatePlayerRemovedElement(playerId)
+      ids.splice(ids.indexOf(playerId) , 1)
+      setTimeout(() =>
       container.scrollTo({
-        top: container.scrollHeight, //work only on focusing currently page
+        top: container.scrollHeight,
         behavior: 'smooth',
-      })
+      }), 1000)
       html.setAlpha(1)
-      htmlTween.play()
       htmlTween.restart()
     });
 }

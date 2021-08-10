@@ -58,16 +58,18 @@ export default function roomChat(
     chat.forEach((value: Chat) => {
       roomChat.innerHTML += generateChatElement(value)
     });
+    setTimeout(() =>
     roomChat.scrollTo({
-      top: roomChat.scrollHeight,
+      top: roomChat.scrollHeight, //work only on focusing currently page
       behavior: 'smooth',
-    });
+    }), 1000)
 
     socket.on('receivedPlayerMessage', (value: Chat) => {
       roomChat.innerHTML += generateChatElement(value)
+      setTimeout(() =>
       roomChat.scrollTo({
-        top: roomChat.scrollHeight, //work only on focusing currently page
+        top: roomChat.scrollHeight,
         behavior: 'smooth',
-      })
+      }), 1000)
     });
 }

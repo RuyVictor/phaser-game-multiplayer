@@ -5,7 +5,7 @@ const containerStyle = `
     padding: 0.6rem 1rem;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-y: scroll;
 `;
 
 export const messageStyle = `

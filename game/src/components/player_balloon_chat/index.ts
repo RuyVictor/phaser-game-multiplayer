@@ -44,9 +44,9 @@ export default function playerBalloonChat(scene: Phaser.Scene, allPlayers: IPlay
         const container = allBallonChat[value.playerId].object.getChildByID('container') as HTMLDivElement;
         container.innerHTML = generateChatElement(value)
 
-        setInterval(() => {
+        scene.events.on('update', () => {
             allBallonChat[value.playerId].object.setPosition(allPlayers[value.playerId].x, allPlayers[value.playerId].y - heightAbovePlayer)
-        }, 0)
+        })
 
         } else {
         const container = allBallonChat[value.playerId].object.getChildByID('container') as HTMLDivElement;

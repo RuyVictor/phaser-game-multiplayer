@@ -74,11 +74,19 @@ export default class Gravel extends Phaser.Scene {
       this.myBullet.setScale(6);
       this.physics.moveTo(this.myBullet,crosshairX,crosshairY, bulletVelocity);
 
+      const currentBullet = this.myBullet
+      this.events.on('update', () => {
+        if(!this.physics.world.bounds.contains(currentBullet.x, currentBullet.y)) {
+          currentBullet.destroy()
+        }
+      })
+      /*
       setInterval((bullet: Phaser.Physics.Arcade.Sprite) => {
         if(!this.physics.world.bounds.contains(bullet.x, bullet.y)) {
           bullet.destroy()
         }
       }, 0, this.myBullet)
+      */
 
       let bulletInfo = {
         playerId: this.socket.id,
@@ -102,11 +110,12 @@ export default class Gravel extends Phaser.Scene {
       this.otherPlayerBullet.body.velocity.x = bulletInfo.velocityX;
       this.otherPlayerBullet.body.velocity.y = bulletInfo.velocityY;
 
-      setInterval((bullet: Phaser.Physics.Arcade.Sprite) => {
-        if(!this.physics.world.bounds.contains(bullet.x, bullet.y)) {
-          bullet.destroy()
+      const currentBullet = this.otherPlayerBullet
+      this.events.on('update', () => {
+        if(!this.physics.world.bounds.contains(currentBullet.x, currentBullet.y)) {
+          currentBullet.destroy()
         }
-      }, 0, this.otherPlayerBullet)
+      })
 
       this.otherPlayerBullet.setData({playerId: bulletInfo.playerId})
     }
