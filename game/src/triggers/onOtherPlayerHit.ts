@@ -1,5 +1,5 @@
 // Effects
-import SparkEffect from '../effects/spark.effect';
+import BloodEffect from '../effects/blood.effect';
 
 export default function onOtherPlayerHit(
   player: any, // is my player
@@ -8,6 +8,6 @@ export default function onOtherPlayerHit(
   scene: Phaser.Scene
   ) {
 
-  scene.add.existing(new SparkEffect(scene, 10, bullet.body.position.x, bullet.body.position.y));
+  scene.add.existing(new BloodEffect(scene, 4, bullet.body.position.x, bullet.body.position.y));
   bullet.destroy()
 }

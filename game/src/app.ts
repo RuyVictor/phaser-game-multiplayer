@@ -1,5 +1,4 @@
-import { io } from "socket.io-client";
-const socket = io("http://localhost:8050")
+import socket from './services/socket'
 
 import Menu from "./scenes/menu";
 import ListRooms from "./scenes/list_rooms";

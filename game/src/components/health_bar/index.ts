@@ -7,11 +7,11 @@ import { IPlayerObject, IHeathBar, IPlayer, IWhoKilledWho } from '../../interfac
 // Utils
 import { Socket } from 'socket.io-client'
 
-let allHealthBar: { [playerId: string]: IHeathBar } = {};
+export let allHealthBar: { [playerId: string]: IHeathBar } = {};
 
-export default function healthBar(scene: Phaser.Scene, allPlayers: IPlayerObject, socket: Socket) {
+export function healthBar(scene: Phaser.Scene, allPlayers: IPlayerObject, socket: Socket) {
 
-    const heightAbovePlayer = 60
+    const heightAbovePlayer = 80
 
     socket.on('playerMoved', (players: { [key: string]: IPlayer }) => {
         Object.keys(players).forEach(id => {
@@ -25,11 +25,9 @@ export default function healthBar(scene: Phaser.Scene, allPlayers: IPlayerObject
                 const ballonChatTween = scene.add.tween({
                     targets: healthBarContainer,
                     ease: 'Sine.easeInOut',
-                    duration: 1000,
-                    delay: 3000,
+                    duration: 400,
                     yoyo: false,
-                    paused: true,
-                    alpha: {from: 1, to: 0},
+                    alpha: {from: 1, to: 0.6},
                 })
         
                 allHealthBar[id] = {
@@ -37,19 +35,20 @@ export default function healthBar(scene: Phaser.Scene, allPlayers: IPlayerObject
                     tween: ballonChatTween
                 }
         
-                const container = allHealthBar[id].object.getChildByID('health-bar') as HTMLDivElement;
-                container.style.width = players[id].health + '%';
+                const divHealth = allHealthBar[id].object.getChildByID('health-bar') as HTMLDivElement;
+                const playerName = allHealthBar[id].object.getChildByID('player-name') as HTMLSpanElement;
+                divHealth.style.width = players[id].health + '%';
+                playerName.innerHTML = id
 
                 scene.events.on('update', () => {
                     if (id in allHealthBar)
                     allHealthBar[id].object.setPosition(allPlayers[id].x, allPlayers[id].y - heightAbovePlayer)
                 })
             } else {
-                const container = allHealthBar[id].object.getChildByID('health-bar') as HTMLDivElement;
-                container.style.width = players[id].health + '%';
-
-                allHealthBar[id].object.setAlpha(1)
-                //allHealthBar[id].tween.restart()
+                let divHealth = allHealthBar[id].object.getChildByID('health-bar') as HTMLDivElement;
+                divHealth.style.width = players[id].health + '%';
+                //Health bar color change dinamically
+                divHealth.style.backgroundColor = `hsl(0, 79%, ${players[id].health}%)`
             }
         });
     });

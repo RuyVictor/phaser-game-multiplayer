@@ -1,10 +1,14 @@
-// Effects
-import SparkEffect from '../effects/spark.effect';
-
 import { Socket } from 'socket.io-client'
+
+// Effects
+import BloodEffect from '../effects/blood.effect';
 
 //Props
 import { playerHealth } from '../scenes/gravel';
+import { allHealthBar } from '../components/health_bar';
+
+//Helpers
+import getRandomDamage from '../helpers/getRandomDamage'
 
 export default function onMyPlayerHit(
     //from callback
@@ -16,24 +20,34 @@ export default function onMyPlayerHit(
     socket: Socket,
     roomId: string) {
 
-    scene.add.existing(new SparkEffect(scene, 10, bullet.body.position.x, bullet.body.position.y));
+    //effects
+    scene.add.existing(new BloodEffect(scene, 4, bullet.body.position.x, bullet.body.position.y));
+    allHealthBar[socket.id].tween.restart() // change my healthBar opacity on hit
+    
     const killerId = bullet.getData('playerId')
     bullet.destroy()
-
+    
     if (playerHealth.heath > 0) {
       //if (bulletType === 'pistol') {
-        playerHealth.heath -= 10;
+        const damage = getRandomDamage(4, 7)
+        playerHealth.heath -= damage;
+        const damageInfo = {
+          damage: damage,
+          roomId: roomId,
+          playerId: socket.id
+        }
+        socket.emit('playerDamage', damageInfo)
       //}
     } else {
         //Animation, show one time
         if (player.anims.getName() !== 'death') {
-            player.anims.play('death', true);
-            const deathInfo = {
-              roomId: roomId,
-              killerId: killerId,
-              playerId: socket.id
-            }
-            socket.emit('playerDeath', deathInfo)
+          player.anims.play('death', true);
+          const whoKilledWhoInfo = {
+            roomId: roomId,
+            killerId: killerId,
+            playerId: socket.id
+          }
+          socket.emit('playerDeath', whoKilledWhoInfo)
         }
     }
 }

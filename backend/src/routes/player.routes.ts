@@ -1,5 +1,5 @@
 import { Server, Socket } from 'socket.io'
-import { Player, Chat, IWhoKilledWho } from '../interfaces/interfaces'
+import { Player, Chat, IDamageInfo, IWhoKilledWho } from '../interfaces/interfaces'
 import getRandomSpawnPoint from '../helpers/getRandomSpawnPoint';
 
 let playersInRoom: { [roomId: string]: { [socketId: string]: Player } } = {};
@@ -17,7 +17,8 @@ export default function PlayerRoutes (io: Server, socket: Socket) {
                 y: getRandomSpawnPoint(400, 500),
                 flipped: randomFlip,
                 animation: 'player_idle',
-                health: 100
+                health: 100,
+                gamePoints: 0
             }
         }
         const initialInformations = {
@@ -34,7 +35,8 @@ export default function PlayerRoutes (io: Server, socket: Socket) {
             y: data.playerInfo.y,
             flipped: data.playerInfo.flipped,
             animation: data.playerInfo.animation,
-            health: data.playerInfo.health
+            health: data.playerInfo.health,
+            gamePoints: data.playerInfo.gamePoints
         };
     
         // emit a message to update players
@@ -45,8 +47,14 @@ export default function PlayerRoutes (io: Server, socket: Socket) {
         io.to(data.roomId).emit('receivedBulletInfo', data.bulletInfo);
     });
     
+    socket.on('playerDamage', (data: IDamageInfo) => {
+        io.to(data.roomId).emit('playerDamaged', data);
+        playersInRoom[data.roomId][socket.id].gamePoints += 1 //damaging, earn 1 point
+    });
+
     socket.on('playerDeath', (data: IWhoKilledWho) => {
         io.to(data.roomId).emit('playerDied', data);
+        playersInRoom[data.roomId][data.killerId].gamePoints += 10 //if enemy kill me, earn 10 point
     });
     
     socket.on('playerMessage', (data: any) => {

@@ -8,7 +8,8 @@ export interface IPlayer {
     y: number, 
     flipped: boolean,
     animation: string,
-    health: number
+    health: number,
+    gamePoints: number
 }
 
 export interface IPlayerObject {
@@ -29,6 +30,17 @@ export interface IBalloonChat {
 export interface IHeathBar {
     object: Phaser.GameObjects.DOMElement,
     tween: Phaser.Tweens.Tween
+}
+
+export interface IDamageElement {
+    object: Phaser.GameObjects.DOMElement,
+    tween: Phaser.Tweens.Tween
+}
+
+export interface IDamageInfo {
+    damage: number,
+    roomId: string,
+    playerId: string
 }
 
 export interface IWhoKilledWho {

@@ -6,8 +6,10 @@ import addPlayer from '../../components/add_player'
 import addOtherPlayer from '../../components/add_other_player'
 import roomChat from '../../components/room_chat'
 import playerBalloonChat from '../../components/player_balloon_chat'
-import healthBar from '../../components/health_bar'
+import { healthBar } from '../../components/health_bar'
+import playerHitFeedback from '../../components/player_hit_feedback'
 import roomActionsLog from '../../components/room_actions_log'
+import SparkEffect from '../../effects/spark.effect'
 
 //Triggers
 import onMyPlayerHit from '../../triggers/onMyPlayerHit'
@@ -52,6 +54,8 @@ export default class Gravel extends Phaser.Scene {
 
   preload() {
     this.load.image('bullet', require('../../assets/sprites/bullets/pistol_bullet.png').default);
+    this.load.image('blood', require('../../assets/sprites/particles/blood.png').default);
+    this.load.image('spark', require('../../assets/sprites/particles/spark.png').default);
     this.load.spritesheet('player_idle', require('../../assets/sprites/player/idle.png').default, { frameWidth: 48, frameHeight: 48 });
     this.load.spritesheet('player_run', require('../../assets/sprites/player/run.png').default, { frameWidth: 48, frameHeight: 48 });
     this.load.spritesheet('player_death', require('../../assets/sprites/player/death.png').default, { frameWidth: 48, frameHeight: 48 });
@@ -72,12 +76,14 @@ export default class Gravel extends Phaser.Scene {
       let angleVelocityY = bulletVelocity * Math.sin(angle)
       this.myBullet.rotation = angle
       this.myBullet.setScale(6);
+      const sparkEffect = this.add.existing(new SparkEffect(this, this.myBullet, 3));
       this.physics.moveTo(this.myBullet,crosshairX,crosshairY, bulletVelocity);
 
       const currentBullet = this.myBullet
       this.events.on('update', () => {
         if(!this.physics.world.bounds.contains(currentBullet.x, currentBullet.y)) {
           currentBullet.destroy()
+          sparkEffect.emitters.first.setFrequency(-1)
         }
       })
       /*
@@ -109,11 +115,13 @@ export default class Gravel extends Phaser.Scene {
       this.otherPlayerBullet.rotation = bulletInfo.angle;
       this.otherPlayerBullet.body.velocity.x = bulletInfo.velocityX;
       this.otherPlayerBullet.body.velocity.y = bulletInfo.velocityY;
+      const sparkEffect = this.add.existing(new SparkEffect(this, this.otherPlayerBullet, 3));
 
       const currentBullet = this.otherPlayerBullet
       this.events.on('update', () => {
         if(!this.physics.world.bounds.contains(currentBullet.x, currentBullet.y)) {
           currentBullet.destroy()
+          sparkEffect.emitters.first.setFrequency(-1)
         }
       })
 
@@ -145,6 +153,7 @@ export default class Gravel extends Phaser.Scene {
           roomChat(this, this.socket, this.roomInfo.roomId, chat)
           playerBalloonChat(this, allPlayers, this.socket)
           healthBar(this, allPlayers, this.socket)
+          playerHitFeedback(this, allPlayers, this.socket)
           roomActionsLog(this, allPlayers,this.socket)
         } else {
           if (!(id in allPlayers)) {

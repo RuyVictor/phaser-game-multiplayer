@@ -3,13 +3,20 @@ export interface Player {
     y: number, 
     flipped: boolean,
     animation: string,
-    health: number
+    health: number,
+    gamePoints: number
 }
 
 export interface Chat {
     playerId: string,
     playerName: string,
     message: string
+}
+
+export interface IDamageInfo {
+    damage: number,
+    roomId: string,
+    playerId: string
 }
 
 export interface IWhoKilledWho {
