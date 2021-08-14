@@ -3,7 +3,7 @@ import socket from './services/socket'
 import Menu from "./scenes/menu";
 import ListRooms from "./scenes/list_rooms";
 import CreateRoom from "./scenes/create_room";
-import Gravel from "./scenes/gravel";
+import Game from "./scenes/game";
 
 const gameConfig: Phaser.Types.Core.GameConfig = {
   title: 'Sample',
@@ -14,7 +14,7 @@ const gameConfig: Phaser.Types.Core.GameConfig = {
     new Menu(socket),
     new ListRooms(socket),
     new CreateRoom(socket),
-    new Gravel(socket),
+    new Game(socket),
   ],
   
   scale: {

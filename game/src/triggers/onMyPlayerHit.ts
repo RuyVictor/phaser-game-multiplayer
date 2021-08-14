@@ -4,7 +4,7 @@ import { Socket } from 'socket.io-client'
 import BloodEffect from '../effects/blood.effect';
 
 //Props
-import { playerHealth } from '../scenes/gravel';
+import { playerHealth } from '../scenes/game';
 import { allHealthBar } from '../components/health_bar';
 
 //Helpers
@@ -21,7 +21,7 @@ export default function onMyPlayerHit(
     roomId: string) {
 
     //effects
-    scene.add.existing(new BloodEffect(scene, 4, bullet.body.position.x, bullet.body.position.y));
+    scene.add.existing(new BloodEffect(scene, 4, bullet));
     allHealthBar[socket.id].tween.restart() // change my healthBar opacity on hit
     
     const killerId = bullet.getData('playerId')
@@ -29,7 +29,7 @@ export default function onMyPlayerHit(
     
     if (playerHealth.heath > 0) {
       //if (bulletType === 'pistol') {
-        const damage = getRandomDamage(4, 7)
+        const damage = getRandomDamage(3, 7)
         playerHealth.heath -= damage;
         const damageInfo = {
           damage: damage,
@@ -42,6 +42,7 @@ export default function onMyPlayerHit(
         //Animation, show one time
         if (player.anims.getName() !== 'death') {
           player.anims.play('death', true);
+          player.setImmovable(true)
           const whoKilledWhoInfo = {
             roomId: roomId,
             killerId: killerId,

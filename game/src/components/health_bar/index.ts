@@ -1,8 +1,8 @@
 // Components
 import { healthBarHTML } from './html'
-
+import { playerHealth } from '../../scenes/game'
 // Interfaces
-import { IPlayerObject, IHeathBar, IPlayer, IWhoKilledWho } from '../../interfaces/interfaces'
+import { IPlayerObject, IHeathBar, IPlayer } from '../../interfaces/interfaces'
 
 // Utils
 import { Socket } from 'socket.io-client'
@@ -46,7 +46,11 @@ export function healthBar(scene: Phaser.Scene, allPlayers: IPlayerObject, socket
                 })
             } else {
                 let divHealth = allHealthBar[id].object.getChildByID('health-bar') as HTMLDivElement;
-                divHealth.style.width = players[id].health + '%';
+                if (players[id].health > 0) {
+                    divHealth.style.width = players[id].health + '%';
+                } else {
+                    divHealth.style.width = 0 + '%';
+                }
                 //Health bar color change dinamically
                 divHealth.style.backgroundColor = `hsl(0, 79%, ${players[id].health}%)`
             }
@@ -58,10 +62,5 @@ export function healthBar(scene: Phaser.Scene, allPlayers: IPlayerObject, socket
             allHealthBar[playerId].object.destroy()
             delete allHealthBar[playerId];
         }
-    });
-
-    socket.on('playerDied', (data: IWhoKilledWho) => {
-        if (data.playerId in allHealthBar)
-        allHealthBar[data.playerId].object.setAlpha(0)
     });
 }

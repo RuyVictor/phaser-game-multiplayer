@@ -8,6 +8,6 @@ export default function onOtherPlayerHit(
   scene: Phaser.Scene
   ) {
 
-  scene.add.existing(new BloodEffect(scene, 4, bullet.body.position.x, bullet.body.position.y));
+  scene.add.existing(new BloodEffect(scene, 4, bullet));
   bullet.destroy()
 }

@@ -46,12 +46,14 @@ export default function playerHitFeedback(scene: Phaser.Scene, allPlayers: IPlay
         container.innerHTML = generateDamageElement(data)
 
         scene.events.on('update', () => {
-            if (allDamageElement[data.playerId].tween.isPlaying()) {
-                allDamageElement[data.playerId].object.setPosition(allPlayers[data.playerId].x, allPlayers[data.playerId].y - heightAbovePlayer)
-                allDamageElement[data.playerId].object.body.velocity.y += 30
-            } else {
-                allDamageElement[data.playerId].object.setPosition(allPlayers[data.playerId].x, allPlayers[data.playerId].y - heightAbovePlayer)
-                allDamageElement[data.playerId].object.body.velocity.y = 0
+            if (data.playerId in allDamageElement) {
+                if (allDamageElement[data.playerId].tween.isPlaying()) {
+                    allDamageElement[data.playerId].object.setPosition(allPlayers[data.playerId].x, allPlayers[data.playerId].y - heightAbovePlayer)
+                    allDamageElement[data.playerId].object.body.velocity.y += 30
+                } else {
+                    allDamageElement[data.playerId].object.setPosition(allPlayers[data.playerId].x, allPlayers[data.playerId].y - heightAbovePlayer)
+                    allDamageElement[data.playerId].object.body.velocity.y = 0
+                }
             }
         })
 

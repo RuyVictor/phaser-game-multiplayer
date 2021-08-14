@@ -2,16 +2,15 @@
 import { containerHTML, messageStyle, killerStyle, playerStyle } from './html'
 
 // Interfaces
-import { IWhoKilledWho, IPlayerObject, InitialPlayerInformations } from '../../interfaces/interfaces'
+import { IWhoKilledWho, InitialPlayerInformations } from '../../interfaces/interfaces'
 
 // Utils
 import { Socket } from 'socket.io-client'
 
-let ids: string[] = []
+let ids: string[] = [] //avoid repeated player names
 
 export default function roomActionsLog(
     scene: Phaser.Scene,
-    allPlayers: IPlayerObject,
     socket: Socket,
     ) {
 
@@ -62,7 +61,7 @@ export default function roomActionsLog(
 
     socket.on('currentPlayers', ({players}: InitialPlayerInformations) => {
       Object.keys(players).forEach(id => {
-        if (!(ids.includes(id))) {
+        if (!ids.includes(id) && id !== socket.id) {
           container.innerHTML += generatePlayerEnteredElement(id)
           ids.push(id)
         }

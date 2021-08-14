@@ -4,19 +4,25 @@ import { Socket } from "socket.io-client"
 // Components
 import addPlayer from '../../components/add_player'
 import addOtherPlayer from '../../components/add_other_player'
+import spawnMyPlayerBullet from '../../components/spawn_my_player_bullet'
+import spawnOtherPlayerBullet from '../../components/spawn_other_player_bullet'
 import roomChat from '../../components/room_chat'
 import playerBalloonChat from '../../components/player_balloon_chat'
 import { healthBar } from '../../components/health_bar'
 import playerHitFeedback from '../../components/player_hit_feedback'
 import roomActionsLog from '../../components/room_actions_log'
-import SparkEffect from '../../effects/spark.effect'
 
 //Triggers
 import onMyPlayerHit from '../../triggers/onMyPlayerHit'
 import onOtherPlayerHit from '../../triggers/onOtherPlayerHit'
 
 //Custom Interfaces
-import { InitialPlayerInformations, RoomInfoGame, IPlayer, IWhoKilledWho } from '../../interfaces/interfaces'
+import {
+  InitialPlayerInformations,
+  RoomInfoGame,
+  IPlayer,
+  IWhoKilledWho
+} from '../../interfaces/interfaces'
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   active: true,
@@ -29,24 +35,21 @@ let allPlayers: {
 } = {};
 
 export let playerHealth = { heath: 100 }
-let bulletInterval = 0;
-let bulletVelocity = 1000;
-let mouseX = 0;
-let mouseY = 0;
+const playerVelocity = 500
+let referenceTime = 0;
+let bulletInterval = 130;
+let mouseInfo: { x: number, y: number }
 
-export default class Gravel extends Phaser.Scene {
+export default class Game extends Phaser.Scene {
   constructor(private socket: Socket) {
     super(sceneConfig);
   }
 
   private roomInfo!: RoomInfoGame;
 
-  //Bullets
-  private myBulletsGroup!: Phaser.Physics.Arcade.Group;
-  private myBullet!: Phaser.Physics.Arcade.Sprite;
-
+  //BulletsGroups
+  private myPlayerBulletsGroup!: Phaser.Physics.Arcade.Group;
   private otherPlayerBulletGroup!: Phaser.Physics.Arcade.Group;
-  private otherPlayerBullet!: Phaser.Physics.Arcade.Sprite;
   
   init (roomInfo: RoomInfoGame) {
     this.roomInfo = roomInfo;
@@ -62,74 +65,12 @@ export default class Gravel extends Phaser.Scene {
     this.load.image('grass-tiles', require('../../assets/tilemaps/gravel_tilemap/grass.png').default);
   }
 
-  spawnPlayerBullet() {
-    this.myBullet = this.myBulletsGroup.get(allPlayers[this.socket.id].x, allPlayers[this.socket.id].y);
-
-    if (this.myBullet) {
-      this.cameras.main.shake(100, 0.004);
-
-      let crosshairX = mouseX + this.cameras.main.worldView.x
-      let crosshairY = mouseY + this.cameras.main.worldView.y
-
-      let angle = Phaser.Math.Angle.Between(this.myBullet.x, this.myBullet.y, crosshairX, crosshairY);
-      let angleVelocityX = bulletVelocity * Math.cos(angle)
-      let angleVelocityY = bulletVelocity * Math.sin(angle)
-      this.myBullet.rotation = angle
-      this.myBullet.setScale(6);
-      const sparkEffect = this.add.existing(new SparkEffect(this, this.myBullet, 3));
-      this.physics.moveTo(this.myBullet,crosshairX,crosshairY, bulletVelocity);
-
-      const currentBullet = this.myBullet
-      this.events.on('update', () => {
-        if(!this.physics.world.bounds.contains(currentBullet.x, currentBullet.y)) {
-          currentBullet.destroy()
-          sparkEffect.emitters.first.setFrequency(-1)
-        }
-      })
-      /*
-      setInterval((bullet: Phaser.Physics.Arcade.Sprite) => {
-        if(!this.physics.world.bounds.contains(bullet.x, bullet.y)) {
-          bullet.destroy()
-        }
-      }, 0, this.myBullet)
-      */
-
-      let bulletInfo = {
-        playerId: this.socket.id,
-        initalPositionX: allPlayers[this.socket.id].x,
-        initalPositionY: allPlayers[this.socket.id].y,
-        velocityX: angleVelocityX,
-        velocityY: angleVelocityY,
-        angle: angle
-      }
-
-      this.socket.emit('playerShot', {roomId: this.roomInfo.roomId, bulletInfo})
-    }
-  }
-
-  spawnOtherPlayerBullet(bulletInfo: any) {
-    this.otherPlayerBullet = this.otherPlayerBulletGroup.get(bulletInfo.initalPositionX, bulletInfo.initalPositionY, 'bullet');
-
-    if (this.otherPlayerBullet) {
-      this.otherPlayerBullet.setScale(6);
-      this.otherPlayerBullet.rotation = bulletInfo.angle;
-      this.otherPlayerBullet.body.velocity.x = bulletInfo.velocityX;
-      this.otherPlayerBullet.body.velocity.y = bulletInfo.velocityY;
-      const sparkEffect = this.add.existing(new SparkEffect(this, this.otherPlayerBullet, 3));
-
-      const currentBullet = this.otherPlayerBullet
-      this.events.on('update', () => {
-        if(!this.physics.world.bounds.contains(currentBullet.x, currentBullet.y)) {
-          currentBullet.destroy()
-          sparkEffect.emitters.first.setFrequency(-1)
-        }
-      })
-
-      this.otherPlayerBullet.setData({playerId: bulletInfo.playerId})
-    }
-  }
-
   create() {
+    let handleMouseMove = (event: any) => {
+      mouseInfo = { x: event.x, y: event.y }
+    };
+    document.addEventListener('mousemove', handleMouseMove);
+
     this.socket.emit("playerEntered", this.roomInfo.roomId)
     //Return of all informations of this current game
     this.socket.on('currentPlayers', ({players, chat}: InitialPlayerInformations) => {
@@ -154,11 +95,11 @@ export default class Gravel extends Phaser.Scene {
           playerBalloonChat(this, allPlayers, this.socket)
           healthBar(this, allPlayers, this.socket)
           playerHitFeedback(this, allPlayers, this.socket)
-          roomActionsLog(this, allPlayers,this.socket)
+          roomActionsLog(this,this.socket)
         } else {
           if (!(id in allPlayers)) {
             allPlayers[id] = addOtherPlayer(this, players[id]);
-            this.physics.add.overlap(allPlayers[id], this.myBulletsGroup,
+            this.physics.add.overlap(allPlayers[id], this.myPlayerBulletsGroup,
               (player, bullet) => onOtherPlayerHit(player, bullet, this), undefined, this);
           }
         }
@@ -197,14 +138,8 @@ export default class Gravel extends Phaser.Scene {
     });
     
     //HANDLE BULLET
-
-    this.socket.on('receivedBulletInfo', (bulletInfo: any) => {
-      if (bulletInfo.playerId !== this.socket.id) {
-        this.spawnOtherPlayerBullet(bulletInfo)
-      }
-    });
-
-    this.myBulletsGroup = this.physics.add.group({
+    
+    this.myPlayerBulletsGroup = this.physics.add.group({
       defaultKey: 'bullet',
       maxSize: 600 //total bullets in weapon
     });
@@ -213,11 +148,11 @@ export default class Gravel extends Phaser.Scene {
       defaultKey: 'bullet',
     });
 
-    let handleMousemove = (event: any) => {
-      mouseX = event.x
-      mouseY = event.y
-    };
-    document.addEventListener('mousemove', handleMousemove);
+    this.socket.on('receivedBulletInfo', (bulletInfo: any) => {
+      if (bulletInfo.playerId !== this.socket.id) {
+        spawnOtherPlayerBullet(this, bulletInfo, allPlayers, this.otherPlayerBulletGroup)
+      }
+    });
   }
  
   update() {
@@ -229,19 +164,19 @@ export default class Gravel extends Phaser.Scene {
 
       if (playerHealth.heath > 0) {
         if (cursorKeys.up.isDown) {
-          allPlayers[this.socket.id].setVelocityY(-500);
+          allPlayers[this.socket.id].setVelocityY(-playerVelocity);
         } else if (cursorKeys.down.isDown) {
-          allPlayers[this.socket.id].setVelocityY(500);
+          allPlayers[this.socket.id].setVelocityY(playerVelocity);
         } else {
           allPlayers[this.socket.id].setVelocityY(0);
         }
         
         if (cursorKeys.right.isDown) {
-          allPlayers[this.socket.id].setVelocityX(500);
+          allPlayers[this.socket.id].setVelocityX(playerVelocity);
           allPlayers[this.socket.id].anims.play('run', true);
           allPlayers[this.socket.id].flipX = false;
         } else if (cursorKeys.left.isDown) {
-          allPlayers[this.socket.id].setVelocityX(-500);
+          allPlayers[this.socket.id].setVelocityX(-playerVelocity);
           allPlayers[this.socket.id].anims.play('run', true);
           allPlayers[this.socket.id].flipX = true;
         } else {
@@ -249,9 +184,16 @@ export default class Gravel extends Phaser.Scene {
           allPlayers[this.socket.id].anims.play('idle', true);
         }
 
-        if (cursorPointer.leftButtonDown() && this.time.now > bulletInterval) {
-          this.spawnPlayerBullet()
-          bulletInterval = this.time.now + 130;
+        if (cursorPointer.leftButtonDown() && this.time.now > referenceTime) {
+          spawnMyPlayerBullet(
+            this,
+            this.socket,
+            this.roomInfo.roomId,
+            mouseInfo,
+            allPlayers,
+            this.myPlayerBulletsGroup
+          )
+          referenceTime = this.time.now + bulletInterval;
         }
       }
 
