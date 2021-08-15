@@ -12,7 +12,7 @@ export default function spawnOtherPlayerBullet(
   otherPlayerBulletsGroup.get(bulletInfo.initalPositionX, bulletInfo.initalPositionY, 'bullet');
 
   if (otherPlayerBullet) {
-    otherPlayerBullet.setScale(6);
+    otherPlayerBullet.setScale(0.4);
     otherPlayerBullet.rotation = bulletInfo.angle;
     otherPlayerBullet.body.velocity.x = bulletInfo.velocityX;
     otherPlayerBullet.body.velocity.y = bulletInfo.velocityY;

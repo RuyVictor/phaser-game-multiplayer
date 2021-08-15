@@ -75,6 +75,6 @@ export default function playerHitFeedback(scene: Phaser.Scene, allPlayers: IPlay
 
     socket.on('playerDied', (data: IWhoKilledWho) => {
         if (data.playerId in allDamageElement)
-        allDamageElement[data.playerId].object.setAlpha(0)
+        allDamageElement[data.playerId].object.setVisible(false)
     });
 }

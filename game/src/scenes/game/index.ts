@@ -4,6 +4,8 @@ import { Socket } from "socket.io-client"
 // Components
 import addPlayer from '../../components/add_player'
 import addOtherPlayer from '../../components/add_other_player'
+import addGun from '../../components/add_gun'
+import addOtherPlayerGun from '../../components/add_other_player_gun'
 import spawnMyPlayerBullet from '../../components/spawn_my_player_bullet'
 import spawnOtherPlayerBullet from '../../components/spawn_other_player_bullet'
 import roomChat from '../../components/room_chat'
@@ -33,12 +35,19 @@ const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
 let allPlayers: { 
   [playerId: string]: Phaser.Physics.Arcade.Sprite
 } = {};
+let allGuns: { 
+  [playerId: string]: Phaser.Physics.Arcade.Sprite
+} = {};
 
 export let playerHealth = { heath: 100 }
 const playerVelocity = 500
 let referenceTime = 0;
 let bulletInterval = 130;
-let mouseInfo: { x: number, y: number }
+let mouseInfo: {
+  x: number,
+  y: number,
+  getXY: () => { x: number, y: number }
+}
 
 export default class Game extends Phaser.Scene {
   constructor(private socket: Socket) {
@@ -56,7 +65,8 @@ export default class Game extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image('bullet', require('../../assets/sprites/bullets/pistol_bullet.png').default);
+    this.load.image('ak-47', require('../../assets/sprites/guns/ak-47.png').default);
+    this.load.image('bullet', require('../../assets/sprites/bullets/bullet.png').default);
     this.load.image('blood', require('../../assets/sprites/particles/blood.png').default);
     this.load.image('spark', require('../../assets/sprites/particles/spark.png').default);
     this.load.spritesheet('player_idle', require('../../assets/sprites/player/idle.png').default, { frameWidth: 48, frameHeight: 48 });
@@ -67,7 +77,13 @@ export default class Game extends Phaser.Scene {
 
   create() {
     let handleMouseMove = (event: any) => {
-      mouseInfo = { x: event.x, y: event.y }
+      mouseInfo = {
+        x: event.x,
+        y: event.y,
+        getXY: () => {
+          return { x: mouseInfo.x, y: mouseInfo.y }
+        }
+      }
     };
     document.addEventListener('mousemove', handleMouseMove);
 
@@ -77,7 +93,7 @@ export default class Game extends Phaser.Scene {
       Object.keys(players).forEach(id => {
         if (id == this.socket.id && !(id in allPlayers)) {
           allPlayers[id] = addPlayer(this, players[id]);
-
+          addGun(this, this.socket, this.roomInfo.roomId, mouseInfo, allPlayers, allGuns)
           //create overlap trigger for this player
           this.physics.add.overlap(allPlayers[id], this.otherPlayerBulletGroup,
             (player, bullet) =>
@@ -99,6 +115,7 @@ export default class Game extends Phaser.Scene {
         } else {
           if (!(id in allPlayers)) {
             allPlayers[id] = addOtherPlayer(this, players[id]);
+            addOtherPlayerGun(this, id, allPlayers, allGuns)
             this.physics.add.overlap(allPlayers[id], this.myPlayerBulletsGroup,
               (player, bullet) => onOtherPlayerHit(player, bullet, this), undefined, this);
           }
@@ -191,6 +208,7 @@ export default class Game extends Phaser.Scene {
             this.roomInfo.roomId,
             mouseInfo,
             allPlayers,
+            allGuns,
             this.myPlayerBulletsGroup
           )
           referenceTime = this.time.now + bulletInterval;

@@ -43,6 +43,10 @@ export default function PlayerRoutes (io: Server, socket: Socket) {
         io.to(data.roomId).emit('playerMoved', playersInRoom[data.roomId]);
     });
     
+    socket.on('playerWeapon', (data: any) => {
+        io.to(data.roomId).emit('receivedWeaponInfo', data.weaponInfo);
+    });
+    
     socket.on('playerShot', (data: any) => {
         io.to(data.roomId).emit('receivedBulletInfo', data.bulletInfo);
     });

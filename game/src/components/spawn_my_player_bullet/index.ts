@@ -9,15 +9,20 @@ export default function spawnMyPlayerBullet(
   roomId: string,
   mouseInfo: {x: number, y: number},
   allPlayers: { [playerId: string]: Phaser.Physics.Arcade.Sprite },
+  allGuns: { [playerId: string]: Phaser.Physics.Arcade.Sprite },
   myPlayerBulletsGroup: Phaser.Physics.Arcade.Group
   ) {
   
   const bulletVelocity = 1000;
+  const bulletSpawnX = allGuns[socket.id].x
+  const bulletSpawnY = allGuns[socket.id].y
+
   const myBullet: Phaser.Physics.Arcade.Sprite =
-  myPlayerBulletsGroup.get(allPlayers[socket.id].x, allPlayers[socket.id].y);
+  myPlayerBulletsGroup.get(bulletSpawnX, bulletSpawnY);
 
   if (myBullet) {
-    myBullet.setScale(6);
+    myBullet.setScale(0.4);
+    myBullet.setOrigin(-0.4, 0.7); //spawn position in weapon
     scene.cameras.main.shake(100, 0.004);
 
     let crosshairX = mouseInfo.x + scene.cameras.main.worldView.x
@@ -26,7 +31,8 @@ export default function spawnMyPlayerBullet(
     let angle = Phaser.Math.Angle.Between(myBullet.x, myBullet.y, crosshairX, crosshairY);
     let angleVelocityX = bulletVelocity * Math.cos(angle)
     let angleVelocityY = bulletVelocity * Math.sin(angle)
-    myBullet.rotation = angle
+    myBullet.setRotation(angle)
+
     scene.physics.moveTo(myBullet, crosshairX, crosshairY, bulletVelocity);
     
     const currentBullet = myBullet // create reference for a single bullet
@@ -57,8 +63,8 @@ export default function spawnMyPlayerBullet(
 
     let bulletInfo = {
       playerId: socket.id,
-      initalPositionX: allPlayers[socket.id].x,
-      initalPositionY: allPlayers[socket.id].y,
+      initalPositionX: allGuns[socket.id].x,
+      initalPositionY: allGuns[socket.id].y,
       velocityX: angleVelocityX,
       velocityY: angleVelocityY,
       angle: angle

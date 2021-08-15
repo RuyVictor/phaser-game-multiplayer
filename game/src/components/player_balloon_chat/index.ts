@@ -64,9 +64,4 @@ export default function playerBalloonChat(scene: Phaser.Scene, allPlayers: IPlay
             delete allBallonChat[playerId];
         }
     });
-
-    socket.on('playerDied', (data: IWhoKilledWho) => {
-        if (data.playerId in allBallonChat)
-        allBallonChat[data.playerId].object.setAlpha(0)
-    });
 }
